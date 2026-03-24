@@ -175,6 +175,58 @@ fn test_transfer_admin() {
 }
 
 #[test]
+#[should_panic(expected = "Only admin can perform this action")]
+fn test_transfer_admin_non_admin_cannot_transfer() {
+    let env = Env::default();
+    let (client, admin, token_address, charity_address) = create_test_contract(&env);
+
+    env.mock_all_auths();
+
+    client.initialize(&admin, &token_address, &charity_address, &30, &20);
+
+    let non_admin = Address::generate(&env);
+    let new_admin = Address::generate(&env);
+    // non_admin is not the stored admin — must panic
+    client.transfer_admin(&non_admin, &new_admin);
+}
+
+#[test]
+fn test_transfer_admin_new_admin_can_call_admin_functions() {
+    let env = Env::default();
+    let (client, admin, token_address, charity_address) = create_test_contract(&env);
+
+    env.mock_all_auths();
+
+    client.initialize(&admin, &token_address, &charity_address, &30, &20);
+
+    let new_admin = Address::generate(&env);
+    client.transfer_admin(&admin, &new_admin);
+
+    // new_admin should be able to call an admin-only function
+    let new_token = Address::generate(&env);
+    client.update_token_address(&new_admin, &new_token);
+    assert_eq!(client.get_token_address(), new_token);
+}
+
+#[test]
+#[should_panic(expected = "Only admin can perform this action")]
+fn test_transfer_admin_old_admin_cannot_call_admin_functions() {
+    let env = Env::default();
+    let (client, admin, token_address, charity_address) = create_test_contract(&env);
+
+    env.mock_all_auths();
+
+    client.initialize(&admin, &token_address, &charity_address, &30, &20);
+
+    let new_admin = Address::generate(&env);
+    client.transfer_admin(&admin, &new_admin);
+
+    // old admin should no longer have privileges
+    let new_token = Address::generate(&env);
+    client.update_token_address(&admin, &new_token);
+}
+
+#[test]
 fn test_configuration_persistence() {
     let env = Env::default();
     let (client, admin, token_address, charity_address) = create_test_contract(&env);
