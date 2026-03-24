@@ -11,6 +11,7 @@ const OWNER_PCT: Symbol = symbol_short!("OWN_PCT");
 const TOTAL_EARNED: Symbol = symbol_short!("EARNED");
 const TOTAL_WEIGHT: Symbol = symbol_short!("TOT_WGT");
 const INCENTIVE_COUNTER: Symbol = symbol_short!("INC_CNT");
+const PAUSED: Symbol = symbol_short!("PAUSED");
 
 pub struct Storage;
 
@@ -205,5 +206,14 @@ impl Storage {
         let mut stats = Self::get_stats(env, address);
         stats.total_earned += amount;
         Self::set_stats(env, address, &stats);
+    }
+
+    // Pause functions
+    pub fn is_paused(env: &Env) -> bool {
+        env.storage().instance().get(&PAUSED).unwrap_or(false)
+    }
+
+    pub fn set_paused(env: &Env, paused: bool) {
+        env.storage().instance().set(&PAUSED, &paused);
     }
 }

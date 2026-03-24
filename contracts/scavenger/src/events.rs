@@ -11,6 +11,8 @@ const WASTE_DEACTIVATED: Symbol = symbol_short!("wst_deact");
 const WASTE_CONFIRMED: Symbol = symbol_short!("wst_conf");
 const WASTE_CONFIRMATION_RESET: Symbol = symbol_short!("wst_rst");
 const WASTE_TRANSFERRED: Symbol = symbol_short!("wst_trans");
+const CONTRACT_PAUSED: Symbol = symbol_short!("paused");
+const CONTRACT_UNPAUSED: Symbol = symbol_short!("unpaused");
 
 /// Emit event when a participant registers
 pub fn emit_participant_registered(
@@ -124,4 +126,14 @@ pub fn emit_waste_transferred(
         (WASTE_TRANSFERRED, waste_id),
         (from, to),
     );
+}
+
+/// Emit event when contract is paused
+pub fn emit_contract_paused(env: &Env, admin: &Address) {
+    env.events().publish((CONTRACT_PAUSED,), admin);
+}
+
+/// Emit event when contract is unpaused
+pub fn emit_contract_unpaused(env: &Env, admin: &Address) {
+    env.events().publish((CONTRACT_UNPAUSED,), admin);
 }

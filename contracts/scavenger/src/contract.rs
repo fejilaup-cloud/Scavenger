@@ -147,6 +147,27 @@ impl ScavengerContract {
         Storage::set_admin(env, &new_admin);
     }
 
+    /// Pause the contract (admin only) — blocks all state-changing functions
+    pub fn pause(env: &Env, admin: Address) {
+        Self::require_admin(env, &admin);
+        assert!(!Storage::is_paused(env), "Contract is already paused");
+        Storage::set_paused(env, true);
+        events::emit_contract_paused(env, &admin);
+    }
+
+    /// Unpause the contract (admin only)
+    pub fn unpause(env: &Env, admin: Address) {
+        Self::require_admin(env, &admin);
+        assert!(Storage::is_paused(env), "Contract is not paused");
+        Storage::set_paused(env, false);
+        events::emit_contract_unpaused(env, &admin);
+    }
+
+    /// Get current pause state
+    pub fn is_paused(env: &Env) -> bool {
+        Storage::is_paused(env)
+    }
+
     /// Register a participant
     pub fn register_participant(
         env: &Env,
@@ -156,6 +177,7 @@ impl ScavengerContract {
         latitude: i64,
         longitude: i64,
     ) -> Participant {
+        Self::require_not_paused(env);
         address.require_auth();
 
         assert!(
@@ -205,6 +227,7 @@ impl ScavengerContract {
         reward_points: u64,
         total_budget: u64,
     ) -> Incentive {
+        Self::require_not_paused(env);
         // Require authentication
         rewarder.require_auth();
 
@@ -318,6 +341,7 @@ impl ScavengerContract {
         new_reward_points: u64,
         new_total_budget: u64,
     ) -> Incentive {
+        Self::require_not_paused(env);
         // Get the incentive
         let mut incentive = Storage::get_incentive(env, incentive_id)
             .expect("Incentive not found");
@@ -369,6 +393,7 @@ impl ScavengerContract {
 
     /// Deactivate an incentive (rewarder only)
     pub fn deactivate_incentive(env: &Env, rewarder: Address, incentive_id: u64) {
+        Self::require_not_paused(env);
         rewarder.require_auth();
 
         let mut incentive = Storage::get_incentive(env, incentive_id)
@@ -390,6 +415,7 @@ impl ScavengerContract {
         waste_type: WasteType,
         weight: u64,
     ) -> Material {
+        Self::require_not_paused(env);
         submitter.require_auth();
 
         assert!(
@@ -448,6 +474,7 @@ impl ScavengerContract {
 
     /// Confirm a waste material
     pub fn confirm_waste(env: &Env, waste_id: u64, confirmer: Address) {
+        Self::require_not_paused(env);
         confirmer.require_auth();
 
         // Get the material
@@ -477,6 +504,7 @@ impl ScavengerContract {
     /// Reset waste confirmation status (owner only)
     /// Allows the waste owner to reset confirmation so it can be re-confirmed
     pub fn reset_waste_confirmation(env: &Env, waste_id: u64, owner: Address) {
+        Self::require_not_paused(env);
         owner.require_auth();
 
         // Get the material
@@ -511,6 +539,7 @@ impl ScavengerContract {
         from: Address,
         to: Address,
     ) {
+        Self::require_not_paused(env);
         from.require_auth();
 
         assert!(
@@ -558,6 +587,7 @@ impl ScavengerContract {
         incentive_id: u64,
         manufacturer: Address,
     ) -> i128 {
+        Self::require_not_paused(env);
         manufacturer.require_auth();
 
         // Get waste material
@@ -683,6 +713,10 @@ impl ScavengerContract {
             "Only admin can perform this action"
         );
         admin.require_auth();
+    }
+
+    fn require_not_paused(env: &Env) {
+        assert!(!Storage::is_paused(env), "Contract is paused");
     }
 
     // ========== Access Control Helper Functions ==========

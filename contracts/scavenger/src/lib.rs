@@ -13,6 +13,7 @@ mod test_participant_registration_flow;
 mod test_waste_registration_flow;
 mod test_data_structures;
 mod test_metrics;
+mod test_pause;
 mod events;
 mod types;
 
