@@ -90,3 +90,16 @@ pub fn emit_tokens_rewarded(
         (amount, waste_id),
     );
 }
+
+/// Emit event when a participant updates their location
+pub fn emit_participant_location_updated(
+    env: &Env,
+    address: &Address,
+    latitude: i128,
+    longitude: i128,
+) {
+    env.events().publish(
+        (symbol_short!("loc_upd"), address),
+        (latitude, longitude),
+    );
+}

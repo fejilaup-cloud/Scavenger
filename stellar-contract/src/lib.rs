@@ -882,13 +882,18 @@ impl ScavengerContract {
     }
 
     /// Update participant location
-    pub fn update_location(
+    /// Update the location of a registered participant.
+    /// Only the participant themselves can call this.
+    /// Coordinates are scaled by 1e6 (e.g. 40_000_000 = 40.000000°).
+    pub fn update_participant_location(
         env: Env,
         address: Address,
         latitude: i128,
         longitude: i128,
     ) -> Participant {
         address.require_auth();
+
+        validation::validate_coordinates(latitude, longitude);
 
         let key = (address.clone(),);
         let mut participant: Participant = env
@@ -897,7 +902,6 @@ impl ScavengerContract {
             .get(&key)
             .expect("Participant not found");
 
-        // Validate participant is registered
         if !participant.is_registered {
             panic!("Participant is not registered");
         }
@@ -906,7 +910,23 @@ impl ScavengerContract {
         participant.longitude = longitude;
         env.storage().instance().set(&key, &participant);
 
+        events::emit_participant_location_updated(&env, &address, latitude, longitude);
+
         participant
+    }
+
+    /// Update participant location.
+    ///
+    /// # Deprecated
+    /// Use [`update_participant_location`] instead. That function also validates
+    /// coordinates and emits a `ParticipantLocationUpdated` event.
+    pub fn update_location(
+        env: Env,
+        address: Address,
+        latitude: i128,
+        longitude: i128,
+    ) -> Participant {
+        Self::update_participant_location(env, address, latitude, longitude)
     }
 
     // ========== Waste Transfer History Functions ==========
