@@ -4,6 +4,9 @@ Cargo.lock
 **/*.rs.bk
 *.pdb
 
+# Test snapshots
+**/test_snapshots/
+
 # Soroban
 .soroban/
 *.wasm

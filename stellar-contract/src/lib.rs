@@ -77,6 +77,21 @@ pub struct ScavengerContract;
 
 #[contractimpl]
 impl ScavengerContract {
+    // ========== Reentrancy Guard Functions ==========
+
+    /// Acquire reentrancy lock
+    fn lock(env: &Env) {
+        if env.storage().instance().has(&REENTRANCY_GUARD) {
+            panic!("Reentrant call detected");
+        }
+        env.storage().instance().set(&REENTRANCY_GUARD, &true);
+    }
+
+    /// Release reentrancy lock
+    fn unlock(env: &Env) {
+        env.storage().instance().remove(&REENTRANCY_GUARD);
+    }
+
     // ========== Admin Functions ==========
 
     /// Initialise the contract administrator.
@@ -1079,6 +1094,20 @@ impl ScavengerContract {
         env.storage().instance().get(&key)
     }
 
+    /// Get total tokens earned by a specific participant
+    /// Returns the total tokens earned, or 0 for unregistered participants
+    pub fn get_participant_earnings(env: Env, address: Address) -> i128 {
+        let key = (address,);
+        if let Some(participant) = env.storage().instance().get::<_, Participant>(&key) {
+            participant.total_tokens_earned as i128
+        } else {
+            0
+        }
+    }
+
+    /// Get participant information with current statistics
+    /// Returns participant details along with their recycling statistics
+    /// Returns None if participant is not registered
     /// Retrieve a participant together with their recycling statistics.
     ///
     /// # Returns
