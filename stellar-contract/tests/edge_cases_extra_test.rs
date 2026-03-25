@@ -100,7 +100,7 @@ fn test_exact_budget_match_blocks_further_distribution() {
 
 // ── Edge case 3: transfer to self is rejected ────────────────────────────────
 #[test]
-#[should_panic(expected = "Cannot transfer waste to self")]
+#[should_panic(expected = "Self-transfer is not allowed")]
 fn test_transfer_to_self_is_rejected() {
     let env = Env::default();
     let (client, _admin, _token) = setup(&env);
