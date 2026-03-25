@@ -162,10 +162,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
@@ -1197,7 +1201,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Waste already deactivated' from contract function 'Symbol(obj#227)'"
+                  "string": "caught panic 'Waste already deactivated' from contract function 'Symbol(obj#237)'"
                 },
                 {
                   "u128": {

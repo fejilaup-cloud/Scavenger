@@ -78,7 +78,7 @@ fn test_v2_rejects_unregistered_sender() {
 // path via the current API — deactivate_waste only operates on v2 (Waste) storage.
 
 #[test]
-#[should_panic(expected = "Cannot transfer deactivated waste")]
+#[should_panic(expected = "Error(Contract, #18)")]
 fn test_v2_rejects_deactivated_waste() {
     let env = Env::default();
     let (client, recycler, collector, _) = setup(&env);
@@ -107,7 +107,7 @@ fn test_v1_rejects_invalid_role_route() {
 }
 
 #[test]
-#[should_panic(expected = "Invalid transfer")]
+#[should_panic(expected = "Error(Contract, #27)")]
 fn test_v2_rejects_invalid_role_route() {
     let env = Env::default();
     let (client, recycler, _, manufacturer) = setup(&env);

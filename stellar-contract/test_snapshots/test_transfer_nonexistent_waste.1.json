@@ -171,10 +171,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
@@ -1347,7 +1351,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Waste not found' from contract function 'Symbol(obj#213)'"
+                  "string": "caught panic 'Waste not found' from contract function 'Symbol(obj#223)'"
                 },
                 {
                   "u64": 99999

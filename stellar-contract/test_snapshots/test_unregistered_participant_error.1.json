@@ -134,10 +134,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
@@ -979,7 +983,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Caller is not a registered participant' from contract function 'Symbol(obj#131)'"
+                  "string": "caught panic 'Caller is not a registered participant' from contract function 'Symbol(obj#139)'"
                 },
                 {
                   "u32": 2

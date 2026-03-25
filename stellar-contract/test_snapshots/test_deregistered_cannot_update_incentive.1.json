@@ -181,10 +181,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
@@ -1477,7 +1481,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Participant is not registered' from contract function 'Symbol(obj#351)'"
+                  "string": "caught panic 'Participant is not registered' from contract function 'Symbol(obj#363)'"
                 },
                 {
                   "u64": 1

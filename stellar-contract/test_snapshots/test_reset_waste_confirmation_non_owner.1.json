@@ -199,10 +199,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
@@ -1558,7 +1562,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Caller is not the owner of this waste item' from contract function 'Symbol(obj#343)'"
+                  "string": "caught panic 'Caller is not the owner of this waste item' from contract function 'Symbol(obj#355)'"
                 },
                 {
                   "u128": {

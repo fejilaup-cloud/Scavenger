@@ -134,10 +134,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
@@ -991,7 +995,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Waste weight must be greater than zero' from contract function 'Symbol(obj#127)'"
+                  "string": "caught panic 'Waste weight must be greater than zero' from contract function 'Symbol(obj#135)'"
                 },
                 {
                   "u32": 2

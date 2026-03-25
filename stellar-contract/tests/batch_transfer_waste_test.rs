@@ -90,7 +90,7 @@ fn test_batch_transfer_single_item() {
 }
 
 #[test]
-#[should_panic(expected = "Waste item not found")]
+#[should_panic(expected = "Error(Contract, #7)")]
 fn test_batch_transfer_nonexistent_waste() {
     let env = Env::default();
     let contract_id = env.register_contract(None, ScavengerContract);
@@ -156,7 +156,7 @@ fn test_batch_transfer_mixed_ownership() {
 }
 
 #[test]
-#[should_panic(expected = "Cannot transfer deactivated waste")]
+#[should_panic(expected = "Error(Contract, #18)")]
 fn test_batch_transfer_deactivated_waste() {
     let env = Env::default();
     let contract_id = env.register_contract(None, ScavengerContract);
@@ -186,7 +186,7 @@ fn test_batch_transfer_deactivated_waste() {
 }
 
 #[test]
-#[should_panic(expected = "Invalid transfer")]
+#[should_panic(expected = "Error(Contract, #27)")]
 fn test_batch_transfer_invalid_route() {
     let env = Env::default();
     let contract_id = env.register_contract(None, ScavengerContract);

@@ -199,10 +199,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
@@ -1715,7 +1719,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Only waste owner can transfer' from contract function 'Symbol(obj#355)'"
+                  "string": "caught panic 'Only waste owner can transfer' from contract function 'Symbol(obj#367)'"
                 },
                 {
                   "u64": 1

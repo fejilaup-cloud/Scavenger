@@ -75,6 +75,7 @@ fn test_collector_to_manufacturer_is_valid() {
     // Also verify transfer works: recycler→collector first, then collector→manufacturer
     let waste_id = create_waste(&client, &recycler);
     client.transfer_waste_v2(&waste_id, &recycler, &collector, &0, &0);
+    client.transfer_waste_v2(&waste_id, &collector, &manufacturer, &0, &0);
     let waste = client.get_waste_v2(&waste_id).unwrap();
     assert_eq!(waste.current_owner, manufacturer);
 }

@@ -60,10 +60,14 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       }
                     ]
@@ -228,7 +232,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Unauthorized: caller is not admin' from contract function 'Symbol(obj#19)'"
+                  "string": "caught panic 'Unauthorized: caller is not admin' from contract function 'Symbol(obj#23)'"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"

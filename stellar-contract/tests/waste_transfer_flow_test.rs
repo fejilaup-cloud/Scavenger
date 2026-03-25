@@ -71,7 +71,8 @@ fn test_valid_transfer_collector_to_manufacturer() {
 }
 
 #[test]
-#[should_panic(expected = "Invalid transfer")]
+
+#[should_panic(expected = "Error(Contract, #27)")]
 fn test_invalid_transfer_collector_to_recycler() {
     let env = Env::default();
     let contract_id = env.register_contract(None, ScavengerContract);
@@ -93,7 +94,8 @@ fn test_invalid_transfer_collector_to_recycler() {
 }
 
 #[test]
-#[should_panic(expected = "Invalid transfer")]
+
+#[should_panic(expected = "Error(Contract, #27)")]
 fn test_invalid_transfer_manufacturer_to_collector() {
     let env = Env::default();
     let contract_id = env.register_contract(None, ScavengerContract);
