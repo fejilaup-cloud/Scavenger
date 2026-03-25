@@ -69,6 +69,12 @@ impl ScavengerContract {
         env.storage().instance().get(&ADMIN).expect("Admin not set")
     }
 
+    /// Transfer admin rights to a new address (current admin only)
+    pub fn transfer_admin(env: Env, current_admin: Address, new_admin: Address) {
+        Self::require_admin(&env, &current_admin);
+        env.storage().instance().set(&ADMIN, &new_admin);
+    }
+
     /// Check if caller is admin
     fn require_admin(env: &Env, caller: &Address) {
         let admin: Address = env.storage().instance().get(&ADMIN).expect("Admin not set");
