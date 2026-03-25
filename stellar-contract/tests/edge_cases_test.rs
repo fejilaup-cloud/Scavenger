@@ -77,7 +77,8 @@ fn test_max_u64_weight() {
     let (client, _, recycler, _) = setup_contract(&env);
 
     let desc = String::from_str(&env, "Max weight");
-    let max_weight = u64::MAX;
+    // MAX_WASTE_WEIGHT is 1_000_000_000 grams; use that as the ceiling
+    let max_weight: u64 = 1_000_000_000;
 
     let material = client.submit_material(&WasteType::Metal, &max_weight, &recycler, &desc);
 
@@ -89,7 +90,8 @@ fn test_max_u128_waste_weight() {
     let env = Env::default();
     let (client, _, recycler, _) = setup_contract(&env);
 
-    let max_weight = u128::MAX;
+    // MAX_WASTE_WEIGHT is 1_000_000_000 grams; values above it are rejected
+    let max_weight: u128 = 1_000_000_000;
     let waste_id = client.recycle_waste(
         &WasteType::Glass,
         &max_weight,

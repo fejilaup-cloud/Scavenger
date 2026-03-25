@@ -27,6 +27,9 @@ const TOKEN_ADDR: Symbol = symbol_short!("TKN_ADDR");
 const PART_INDEX: Symbol = symbol_short!("PART_IDX");
 const PAUSED: Symbol = symbol_short!("PAUSED");
 
+/// Maximum allowed waste weight per submission (1 000 000 kg in grams).
+const MAX_WASTE_WEIGHT: u128 = 1_000_000_000;
+
 /// Reward distribution percentages stored as a single instance-storage entry.
 ///
 /// Consolidating `collector_percentage` and `owner_percentage` into one struct
@@ -1551,6 +1554,10 @@ impl ScavengerContract {
         Self::require_not_paused(&env);
         Self::only_registered(&env, &submitter);
 
+        if weight as u128 > MAX_WASTE_WEIGHT {
+            panic!("Waste weight exceeds maximum allowed");
+        }
+
         // Get next waste ID using the new storage system
         let waste_id = Self::next_waste_id(&env);
 
@@ -1620,6 +1627,10 @@ impl ScavengerContract {
 
         if weight == 0 {
             panic!("Waste weight must be greater than zero");
+        }
+
+        if weight > MAX_WASTE_WEIGHT {
+            panic!("Waste weight exceeds maximum allowed");
         }
 
         let waste_id = Self::next_waste_id(&env) as u128;
