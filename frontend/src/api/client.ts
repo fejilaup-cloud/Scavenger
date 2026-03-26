@@ -5,6 +5,7 @@ import {
   Participant,
   Incentive,
   Material,
+  Waste,
   WasteTransfer,
   ParticipantStats,
   GlobalMetrics,
@@ -281,6 +282,14 @@ export class ScavengerClient {
     ])
   }
 
+  async getIncentives(wasteType: WasteType): Promise<Incentive[]> {
+    return this.invoke<Incentive[]>('get_incentives', [nativeToScVal(wasteType)])
+  }
+
+  async getAllActiveIncentives(): Promise<Incentive[]> {
+    return this.invoke<Incentive[]>('get_active_incentives', [])
+  }
+
   async updateIncentive(
     incentiveId: number,
     newRewardPoints: bigint,
@@ -329,6 +338,10 @@ export class ScavengerClient {
     ])
   }
 
+  async getParticipantWastes(address: string): Promise<number[]> {
+    return this.invoke<number[]>('get_participant_wastes', [new Address(address).toScVal()])
+  }
+
   async deactivateWaste(admin: string, wasteId: number, signer: string): Promise<void> {
     return this.invoke<void>(
       'deactivate_waste',
@@ -371,6 +384,12 @@ export class ScavengerClient {
     ])
   }
 
+  async getWasteTransferHistoryV2(wasteId: bigint): Promise<WasteTransfer[]> {
+    return this.invoke<WasteTransfer[]>('get_waste_transfer_history_v2', [
+      nativeToScVal(wasteId, { type: 'u128' })
+    ])
+  }
+
   async distributeRewards(
     wasteId: number,
     incentiveId: number,
@@ -394,5 +413,17 @@ export class ScavengerClient {
 
   async getSupplyChainStats(): Promise<[bigint, bigint, bigint]> {
     return this.invoke<[bigint, bigint, bigint]>('get_supply_chain_stats', [])
+  }
+
+  async getParticipantWastes(address: string): Promise<number[]> {
+    return this.invoke<number[]>('get_participant_wastes', [new Address(address).toScVal()])
+  }
+
+  async getParticipantWastesV2(address: string): Promise<bigint[]> {
+    return this.invoke<bigint[]>('get_participant_wastes_v2', [new Address(address).toScVal()])
+  }
+
+  async getWasteV2(wasteId: bigint): Promise<Waste | null> {
+    return this.invoke<Waste | null>('get_waste_v2', [nativeToScVal(wasteId, { type: 'u128' })])
   }
 }

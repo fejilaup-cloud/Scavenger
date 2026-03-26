@@ -45,6 +45,19 @@ export interface Material {
   confirmer: string
 }
 
+export interface Waste {
+  waste_id: bigint
+  waste_type: WasteType
+  weight: bigint
+  current_owner: string
+  latitude: bigint
+  longitude: bigint
+  recycled_timestamp: number
+  is_active: boolean
+  is_confirmed: boolean
+  confirmer: string
+}
+
 export interface WasteTransfer {
   waste_id: number
   from: string

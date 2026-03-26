@@ -35,3 +35,7 @@ export const networkConfig: NetworkConfig = {
   ...NETWORK_CONFIGS[config.network],
   rpcUrl: config.rpcUrl,
 }
+
+export function getNetworkPassphrase(network: string): string {
+  return NETWORK_CONFIGS[network]?.networkPassphrase ?? Networks.TESTNET
+}
