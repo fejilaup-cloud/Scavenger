@@ -12,6 +12,7 @@ import { ManufacturerDashboardPage } from '@/pages/ManufacturerDashboardPage'
 import { CollectorDashboardPage } from '@/pages/CollectorDashboardPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { RewardsPage } from '@/pages/RewardsPage'
+import { SupplyChainTrackerPage } from '@/pages/SupplyChainTrackerPage'
 
 function ProtectedLayout() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
       { path: 'manufacturer', element: <ManufacturerDashboardPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'rewards', element: <RewardsPage /> },
+      { path: 'tracker', element: <SupplyChainTrackerPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
