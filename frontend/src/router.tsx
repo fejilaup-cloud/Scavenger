@@ -11,6 +11,7 @@ import { WasteListPage } from '@/pages/WasteListPage'
 import { ManufacturerDashboardPage } from '@/pages/ManufacturerDashboardPage'
 import { CollectorDashboardPage } from '@/pages/CollectorDashboardPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { RewardsPage } from '@/pages/RewardsPage'
 
 function ProtectedLayout() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
       { path: 'wastes', element: <WasteListPage /> },
       { path: 'manufacturer', element: <ManufacturerDashboardPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'rewards', element: <RewardsPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
