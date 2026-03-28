@@ -10,6 +10,7 @@ import { IncentivesPage } from '@/pages/IncentivesPage'
 import { WasteListPage } from '@/pages/WasteListPage'
 import { ManufacturerDashboardPage } from '@/pages/ManufacturerDashboardPage'
 import { CollectorDashboardPage } from '@/pages/CollectorDashboardPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 
 function ProtectedLayout() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       { path: 'dashboard/recycler', element: <RecyclerDashboard /> },
       { path: 'wastes', element: <WasteListPage /> },
       { path: 'manufacturer', element: <ManufacturerDashboardPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
