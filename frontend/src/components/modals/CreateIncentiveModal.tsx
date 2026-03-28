@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
+import { TransactionConfirmDialog } from '@/components/ui/TransactionConfirmDialog'
 import { WasteType, Incentive } from '@/api/types'
 import { wasteTypeLabel } from '@/lib/helpers'
 import { useIncentives } from '@/hooks/useIncentives'
@@ -40,6 +41,7 @@ export function CreateIncentiveModal({ open, onClose, onSuccess }: Props) {
   const [budgetInput, setBudgetInput] = useState('')
   const [isPending, setIsPending]     = useState(false)
   const [error, setError]             = useState<string | null>(null)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const { createIncentive } = useIncentives()
 
@@ -59,6 +61,7 @@ export function CreateIncentiveModal({ open, onClose, onSuccess }: Props) {
     setRewardInput('')
     setBudgetInput('')
     setError(null)
+    setShowConfirm(false)
   }
 
   function handleClose() {
@@ -71,7 +74,10 @@ export function CreateIncentiveModal({ open, onClose, onSuccess }: Props) {
     e.preventDefault()
     setError(null)
     if (rewardNum <= 0 || budgetNum <= 0) return
+    setShowConfirm(true)
+  }
 
+  async function executeCreate() {
     const rewardPoints = BigInt(Math.round(rewardNum))
     const budget       = BigInt(Math.round(budgetNum))
 
@@ -82,6 +88,7 @@ export function CreateIncentiveModal({ open, onClose, onSuccess }: Props) {
       reset()
       onClose()
     } catch (err) {
+      setShowConfirm(false)
       setError(err instanceof Error ? err.message : 'Transaction failed')
     } finally {
       setIsPending(false)
@@ -91,7 +98,21 @@ export function CreateIncentiveModal({ open, onClose, onSuccess }: Props) {
   const canSubmit = rewardNum > 0 && budgetNum > 0 && !isPending
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+    <>
+      <TransactionConfirmDialog
+        open={showConfirm}
+        action="Create Incentive"
+        params={[
+          { label: 'Waste type', value: wasteTypeLabel(wasteType) },
+          { label: 'Reward per gram', value: `${rewardNum} pts` },
+          { label: 'Total budget', value: `${budgetNum} pts` },
+          ...(estimatedCoverage ? [{ label: 'Est. coverage', value: estimatedCoverage }] : []),
+        ]}
+        isPending={isPending}
+        onConfirm={executeCreate}
+        onCancel={() => !isPending && setShowConfirm(false)}
+      />
+      <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create Incentive</DialogTitle>
@@ -183,5 +204,6 @@ export function CreateIncentiveModal({ open, onClose, onSuccess }: Props) {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

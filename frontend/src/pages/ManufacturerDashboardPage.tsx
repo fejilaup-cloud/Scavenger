@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Plus, PackageCheck, Zap, History, Loader2 } from 'lucide-react'
 import { useManufacturerDashboard } from '@/hooks/useManufacturerDashboard'
 import { WasteType } from '@/api/types'
@@ -38,7 +38,7 @@ export function ManufacturerDashboardPage() {
   const [form, setForm] = useState({ wasteType: String(WasteType.Paper), rewardPoints: '', budget: '' })
   const [submitting, setSubmitting] = useState(false)
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
     setSubmitting(true)
     try {
       await createIncentive(
@@ -51,7 +51,7 @@ export function ManufacturerDashboardPage() {
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [createIncentive, form])
 
   return (
     <div className="space-y-6 overflow-x-hidden">

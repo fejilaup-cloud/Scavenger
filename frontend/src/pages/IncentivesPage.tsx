@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Loader2, Zap } from 'lucide-react'
 import { useIncentives } from '@/hooks/useIncentives'
 import { Incentive, WasteType, Role } from '@/api/types'
@@ -61,12 +61,13 @@ export function IncentivesPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     setForm(EMPTY_FORM)
     setEditTarget(null)
     setCreateOpen(true)
-  }
-  const openEdit = (inc: Incentive) => {
+  }, [])
+
+  const openEdit = useCallback((inc: Incentive) => {
     setForm({
       wasteType: String(inc.waste_type),
       rewardPoints: String(inc.reward_points),
@@ -74,7 +75,11 @@ export function IncentivesPage() {
     })
     setEditTarget(inc)
     setCreateOpen(true)
-  }
+  }, [])
+
+  const handleDeactivate = useCallback((inc: Incentive) => {
+    deactivateIncentive(inc.id)
+  }, [deactivateIncentive])
 
   const handleSubmit = async () => {
     setSubmitting(true)
