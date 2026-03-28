@@ -1,25 +1,39 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { AppShell } from '@/components/layout/AppShell'
+import { PageSkeleton } from '@/components/ui/Skeletons'
+
+// Eagerly load tiny pages that are always needed
 import { LandingPage } from '@/pages/LandingPage'
-import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-import { RecyclerDashboard } from '@/pages/RecyclerDashboard'
-import { IncentivesPage } from '@/pages/IncentivesPage'
-import { WasteListPage } from '@/pages/WasteListPage'
-import { ManufacturerDashboardPage } from '@/pages/ManufacturerDashboardPage'
-import { CollectorDashboardPage } from '@/pages/CollectorDashboardPage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { RewardsPage } from '@/pages/RewardsPage'
-import { SupplyChainTrackerPage } from '@/pages/SupplyChainTrackerPage'
+
+// Lazy-load all protected pages to reduce initial bundle size
+const HomePage                  = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })))
+const RecyclerDashboard         = lazy(() => import('@/pages/RecyclerDashboard').then((m) => ({ default: m.RecyclerDashboard })))
+const IncentivesPage            = lazy(() => import('@/pages/IncentivesPage').then((m) => ({ default: m.IncentivesPage })))
+const WasteListPage             = lazy(() => import('@/pages/WasteListPage').then((m) => ({ default: m.WasteListPage })))
+const ManufacturerDashboardPage = lazy(() => import('@/pages/ManufacturerDashboardPage').then((m) => ({ default: m.ManufacturerDashboardPage })))
+const CollectorDashboardPage    = lazy(() => import('@/pages/CollectorDashboardPage').then((m) => ({ default: m.CollectorDashboardPage })))
+const SettingsPage              = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const RewardsPage               = lazy(() => import('@/pages/RewardsPage').then((m) => ({ default: m.RewardsPage })))
+const SupplyChainTrackerPage    = lazy(() => import('@/pages/SupplyChainTrackerPage').then((m) => ({ default: m.SupplyChainTrackerPage })))
+
+function PageFallback() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Outlet />
+    </Suspense>
+  )
+}
 
 function ProtectedLayout() {
   const { isAuthenticated, isLoading } = useAuth()
   if (isLoading) return null
   return isAuthenticated ? (
     <AppShell>
-      <Outlet />
+      <PageFallback />
     </AppShell>
   ) : (
     <Navigate to="/login" replace />
@@ -30,7 +44,6 @@ export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   {
-    // Protected routes share AppShell and require authentication
     element: <ProtectedLayout />,
     children: [
       { path: 'dashboard', element: <HomePage /> },

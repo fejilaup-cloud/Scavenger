@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Pencil, PowerOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Incentive } from '@/api/types'
@@ -14,7 +15,7 @@ export interface IncentiveCardProps {
   className?: string
 }
 
-export function IncentiveCard({
+export const IncentiveCard = memo(function IncentiveCard({
   incentive,
   isManufacturer,
   onEdit,
@@ -106,4 +107,5 @@ export function IncentiveCard({
       )}
     </Card>
   )
-}
+})
+IncentiveCard.displayName = 'IncentiveCard'

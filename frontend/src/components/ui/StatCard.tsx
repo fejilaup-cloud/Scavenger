@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { memo } from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -32,7 +33,7 @@ export interface StatCardProps {
   className?: string
 }
 
-export function StatCard({
+export const StatCard = memo(function StatCard({
   icon,
   label,
   value,
@@ -76,4 +77,5 @@ export function StatCard({
       </CardContent>
     </Card>
   )
-}
+})
+StatCard.displayName = 'StatCard'

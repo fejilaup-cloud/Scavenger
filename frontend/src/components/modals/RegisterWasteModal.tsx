@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
+import { TransactionConfirmDialog } from '@/components/ui/TransactionConfirmDialog'
 import { WasteType } from '@/api/types'
 import { useRecycleWaste } from '@/hooks/useRecycleWaste'
 import { Newspaper, Recycle, Package, Wrench, GlassWater, LocateFixed, CheckCircle2 } from 'lucide-react'
@@ -50,6 +51,10 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
   const [locating, setLocating]     = useState(false)
   const [locError, setLocError]     = useState<string | null>(null)
   const [successId, setSuccessId]   = useState<bigint | null>(null)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [pendingParams, setPendingParams] = useState<{
+    weightGrams: bigint; lat: bigint; lng: bigint
+  } | null>(null)
 
   const { mutate: recycleWaste, isPending } = useRecycleWaste()
 
@@ -60,6 +65,8 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
     setWasteType(WasteType.Paper)
     setLocError(null)
     setSuccessId(null)
+    setShowConfirm(false)
+    setPendingParams(null)
   }
 
   function handleClose() {
@@ -94,19 +101,27 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
     const w = parseFloat(weight)
     if (!w || w <= 0) return
 
-    // Weight input is in grams — pass directly to contract
     const weightGrams = BigInt(Math.round(w))
-    // Convert decimal degrees → microdegrees (contract expects i128 microdegrees)
     const lat = BigInt(Math.round(parseFloat(latitude || '0') * 1_000_000))
     const lng = BigInt(Math.round(parseFloat(longitude || '0') * 1_000_000))
 
+    // Show confirmation before submitting
+    setPendingParams({ weightGrams, lat, lng })
+    setShowConfirm(true)
+  }
+
+  function executeRegister() {
+    if (!pendingParams) return
+    const { weightGrams, lat, lng } = pendingParams
     recycleWaste(
       { recycler: address, wasteType, weightGrams, latitude: lat, longitude: lng },
       {
         onSuccess: (wasteId) => {
+          setShowConfirm(false)
           setSuccessId(wasteId)
           onSuccess?.(wasteId)
         },
+        onSettled: () => setShowConfirm(false),
       }
     )
   }
@@ -136,9 +151,25 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
   }
 
   const selectedType = WASTE_TYPES.find((t) => t.value === wasteType)
+  const weightNum = parseFloat(weight) || 0
+  const weightDisplay = weightNum >= 1000 ? `${(weightNum / 1000).toFixed(2)} kg` : `${weightNum} g`
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+    <>
+      <TransactionConfirmDialog
+        open={showConfirm}
+        action="Register Waste"
+        params={[
+          { label: 'Type', value: selectedType?.label ?? '' },
+          { label: 'Weight', value: weightDisplay },
+          ...(latitude ? [{ label: 'Latitude', value: latitude }] : []),
+          ...(longitude ? [{ label: 'Longitude', value: longitude }] : []),
+        ]}
+        isPending={isPending}
+        onConfirm={executeRegister}
+        onCancel={() => !isPending && setShowConfirm(false)}
+      />
+      <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Register Waste</DialogTitle>
@@ -259,5 +290,6 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
         </form>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

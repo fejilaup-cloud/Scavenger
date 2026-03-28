@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { memo } from 'react'
 import {
   Newspaper,
   Recycle,
@@ -71,7 +72,7 @@ export interface WasteCardProps {
   className?: string
 }
 
-export function WasteCard({ waste, actions, className }: WasteCardProps) {
+export const WasteCard = memo(function WasteCard({ waste, actions, className }: WasteCardProps) {
   const status     = resolveStatus(waste)
   const statusCfg  = STATUS_CONFIG[status]
   const weightGrams = Number(waste.weight)
@@ -135,4 +136,5 @@ export function WasteCard({ waste, actions, className }: WasteCardProps) {
       )}
     </Card>
   )
-}
+})
+WasteCard.displayName = 'WasteCard'

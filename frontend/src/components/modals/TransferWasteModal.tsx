@@ -10,8 +10,9 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
+import { TransactionConfirmDialog } from '@/components/ui/TransactionConfirmDialog'
 import { Waste, Role } from '@/api/types'
-import { wasteTypeLabel } from '@/lib/helpers'
+import { wasteTypeLabel, formatAddress } from '@/lib/helpers'
 import { useWallet } from '@/context/WalletContext'
 import { useParticipant } from '@/hooks/useParticipant'
 import { useContract } from '@/context/ContractContext'
@@ -58,10 +59,11 @@ export function TransferWasteModal({ waste, open, onClose, onSuccess }: Transfer
   const { participant } = useParticipant()
   const { config } = useContract()
 
-  const [recipient, setRecipient] = useState('')
-  const [note, setNote]           = useState('')
-  const [isPending, setIsPending] = useState(false)
-  const [txError, setTxError]     = useState<string | null>(null)
+  const [recipient, setRecipient]       = useState('')
+  const [note, setNote]                 = useState('')
+  const [isPending, setIsPending]       = useState(false)
+  const [txError, setTxError]           = useState<string | null>(null)
+  const [showConfirm, setShowConfirm]   = useState(false)
 
   // ── Derived validation ──────────────────────────────────────────────────
   const recipientTrimmed = recipient.trim()
@@ -105,9 +107,14 @@ export function TransferWasteModal({ waste, open, onClose, onSuccess }: Transfer
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!waste || !address || !canSubmit) return
+    // Show confirmation step first
+    setShowConfirm(true)
+  }
+
+  async function executeTransfer() {
+    if (!waste || !address) return
     setTxError(null)
 
-    // Use current location as 0,0 (no GPS in browser context; contract accepts 0)
     const lat = BigInt(0)
     const lon = BigInt(0)
 
@@ -128,12 +135,13 @@ export function TransferWasteModal({ waste, open, onClose, onSuccess }: Transfer
         note.trim(),
         address
       )
+      setShowConfirm(false)
       onSuccess?.(waste)
       reset()
       onClose()
     } catch (err) {
+      setShowConfirm(false)
       const msg = err instanceof Error ? err.message : 'Transaction failed'
-      // Surface friendly messages for known contract errors
       if (msg.includes('#') ) {
         setTxError(`Contract error: ${msg}. Check the recipient is a registered participant with a valid role.`)
       } else {
@@ -152,17 +160,32 @@ export function TransferWasteModal({ waste, open, onClose, onSuccess }: Transfer
     : `${weightNum} g`
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="h-4 w-4" />
-            Transfer Waste
-          </DialogTitle>
-          <DialogDescription>
-            Transfer ownership of this waste item to another participant.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <TransactionConfirmDialog
+        open={showConfirm}
+        action="Transfer Waste"
+        params={[
+          { label: 'Waste ID', value: `#${waste.waste_id.toString()}` },
+          { label: 'Type', value: wasteTypeLabel(waste.waste_type) },
+          { label: 'Weight', value: weightStr },
+          { label: 'Recipient', value: formatAddress(recipientTrimmed) },
+          ...(note.trim() ? [{ label: 'Note', value: note.trim() }] : []),
+        ]}
+        isPending={isPending}
+        onConfirm={executeTransfer}
+        onCancel={() => !isPending && setShowConfirm(false)}
+      />
+      <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-4 w-4" />
+              Transfer Waste
+            </DialogTitle>
+            <DialogDescription>
+              Transfer ownership of this waste item to another participant.
+            </DialogDescription>
+          </DialogHeader>
 
         {/* Waste summary */}
         <div className="flex items-center justify-between rounded-md border bg-muted/40 px-4 py-3 text-sm">
@@ -245,5 +268,6 @@ export function TransferWasteModal({ waste, open, onClose, onSuccess }: Transfer
         </form>
       </DialogContent>
     </Dialog>
+    </>
   )
 }
