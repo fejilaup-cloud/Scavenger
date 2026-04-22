@@ -151,3 +151,16 @@ pub fn emit_carbon_credits_earned(
         (waste_type, weight_grams, credits),
     );
 }
+
+/// Emit event when a waste item is marked as contaminated.
+pub fn emit_waste_contaminated(
+    env: &Env,
+    waste_id: u128,
+    verifier: &Address,
+    contamination_level: u32,
+) {
+    env.events().publish(
+        (symbol_short!("contam"), waste_id),
+        (verifier, contamination_level),
+    );
+}

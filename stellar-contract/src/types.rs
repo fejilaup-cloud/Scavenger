@@ -574,6 +574,12 @@ pub struct Waste {
     pub processing_status: ProcessingStatus,
     /// Ordered history of processing stage changes
     pub processing_history: soroban_sdk::Vec<ProcessingRecord>,
+    /// Whether the waste has been marked as contaminated
+    pub is_contaminated: bool,
+    /// Contamination level 0-100 (percentage)
+    pub contamination_level: u32,
+    /// Reason for contamination (max 200 chars)
+    pub contamination_reason: String,
 }
 
 impl Waste {
@@ -611,6 +617,9 @@ impl Waste {
             confirmer,
             processing_status: ProcessingStatus::Collected,
             processing_history: history,
+            is_contaminated: false,
+            contamination_level: 0,
+            contamination_reason: String::from_str(env, ""),
         }
     }
 
@@ -796,6 +805,9 @@ impl WasteBuilder {
             confirmer,
             processing_status: ProcessingStatus::Collected,
             processing_history: history,
+            is_contaminated: false,
+            contamination_level: 0,
+            contamination_reason: String::from_str(env, ""),
         }
     }
 }
