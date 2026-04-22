@@ -115,3 +115,19 @@ pub fn emit_contract_paused(env: &Env, admin: &Address) {
 pub fn emit_contract_unpaused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("unpaused"),), admin);
 }
+
+/// Emit event when a collection route is created.
+pub fn emit_route_created(env: &Env, route_id: u64, collector: &Address, waste_count: u32) {
+    env.events().publish(
+        (symbol_short!("rt_new"), route_id),
+        (collector, waste_count),
+    );
+}
+
+/// Emit event when a collection route is completed.
+pub fn emit_route_completed(env: &Env, route_id: u64, collector: &Address) {
+    env.events().publish(
+        (symbol_short!("rt_done"), route_id),
+        collector,
+    );
+}

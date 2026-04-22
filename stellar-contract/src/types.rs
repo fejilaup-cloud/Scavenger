@@ -1325,3 +1325,31 @@ pub struct GlobalMetrics {
     pub total_tokens_earned: u128,
 }
 
+/// Status of a collection route.
+#[contracttype]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RouteStatus {
+    /// Route created, not yet started
+    Pending = 0,
+    /// Route completed by the collector
+    Completed = 1,
+    /// Route cancelled
+    Cancelled = 2,
+}
+
+/// A collection route grouping nearby waste items for a collector.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CollectionRoute {
+    /// Unique route ID
+    pub id: u64,
+    /// Collector assigned to this route
+    pub collector: Address,
+    /// Ordered list of v2 waste IDs to collect (max 50)
+    pub waste_ids: soroban_sdk::Vec<u128>,
+    /// Current status
+    pub status: RouteStatus,
+    /// Ledger timestamp when route was created
+    pub created_at: u64,
+}
+
