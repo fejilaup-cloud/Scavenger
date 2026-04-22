@@ -2985,4 +2985,159 @@ impl ScavengerContract {
 
         Ok(child_ids)
     }
+
+    /// Merge multiple v2 waste items of the same type into a single new item.
+    ///
+    /// All source wastes must be owned by `owner`, active, share the same
+    /// [`WasteType`], and be at the same location. They are deactivated and a
+    /// new waste with the combined weight is created. Transfer histories are
+    /// aggregated (deduplicated by `waste_id`) into the merged item. A
+    /// `WastesMerged` event is emitted.
+    ///
+    /// # Parameters
+    /// - `waste_ids`: IDs of the v2 wastes to merge (2–20).
+    /// - `owner`: Current owner of all wastes. Must sign.
+    ///
+    /// # Returns
+    /// The new merged waste ID (`u128`).
+    ///
+    /// # Errors
+    /// - [`Error::TooFewWastes`] if fewer than 2 IDs are provided.
+    /// - [`Error::TooManyWastes`] if more than 20 IDs are provided.
+    /// - [`Error::WasteNotFound`] if any ID does not exist.
+    /// - [`Error::NotWasteOwner`] if `owner` does not own every waste.
+    /// - [`Error::WasteDeactivated`] if any waste is already deactivated.
+    /// - [`Error::WasteTypeMismatchMerge`] if wastes have different types.
+    /// - [`Error::LocationMismatch`] if wastes are at different locations.
+    pub fn merge_wastes(
+        env: Env,
+        waste_ids: Vec<u128>,
+        owner: Address,
+    ) -> Result<u128, Error> {
+        owner.require_auth();
+        Self::require_not_paused(&env);
+
+        let n = waste_ids.len();
+        if n < 2 {
+            return Err(Error::TooFewWastes);
+        }
+        if n > 20 {
+            return Err(Error::TooManyWastes);
+        }
+
+        // Validate all wastes and accumulate combined weight
+        let mut combined_weight: u128 = 0;
+        let mut ref_type: Option<types::WasteType> = None;
+        let mut ref_lat: Option<i128> = None;
+        let mut ref_lon: Option<i128> = None;
+
+        for waste_id in waste_ids.iter() {
+            let waste: types::Waste = env
+                .storage()
+                .instance()
+                .get(&("waste_v2", waste_id))
+                .ok_or(Error::WasteNotFound)?;
+
+            if waste.current_owner != owner {
+                return Err(Error::NotWasteOwner);
+            }
+            if !waste.is_active {
+                return Err(Error::WasteDeactivated);
+            }
+
+            match ref_type {
+                None => ref_type = Some(waste.waste_type),
+                Some(t) if t != waste.waste_type => return Err(Error::WasteTypeMismatchMerge),
+                _ => {}
+            }
+
+            match (ref_lat, ref_lon) {
+                (None, None) => {
+                    ref_lat = Some(waste.latitude);
+                    ref_lon = Some(waste.longitude);
+                }
+                (Some(lat), Some(lon)) if lat != waste.latitude || lon != waste.longitude => {
+                    return Err(Error::LocationMismatch);
+                }
+                _ => {}
+            }
+
+            combined_weight = combined_weight
+                .checked_add(waste.weight)
+                .ok_or(Error::Overflow)?;
+        }
+
+        let waste_type = ref_type.unwrap();
+        let latitude = ref_lat.unwrap();
+        let longitude = ref_lon.unwrap();
+        let timestamp = env.ledger().timestamp();
+
+        // Create merged waste
+        let merged_id = Self::next_waste_id(&env) as u128;
+        let merged = types::Waste::new(
+            merged_id,
+            waste_type,
+            combined_weight,
+            owner.clone(),
+            latitude,
+            longitude,
+            timestamp,
+            true,
+            false,
+            owner.clone(),
+        );
+        env.storage()
+            .instance()
+            .set(&("waste_v2", merged_id), &merged);
+
+        // Aggregate transfer histories (append all source histories)
+        let mut merged_history: Vec<WasteTransfer> = Vec::new(&env);
+        for waste_id in waste_ids.iter() {
+            let history: Vec<WasteTransfer> = env
+                .storage()
+                .instance()
+                .get(&("transfer_history", waste_id))
+                .unwrap_or(Vec::new(&env));
+            for record in history.iter() {
+                merged_history.push_back(record);
+            }
+        }
+        env.storage()
+            .instance()
+            .set(&("transfer_history", merged_id), &merged_history);
+
+        // Update owner waste list: remove sources, add merged
+        let owner_list: Vec<u128> = env
+            .storage()
+            .instance()
+            .get(&("participant_wastes", owner.clone()))
+            .unwrap_or(Vec::new(&env));
+        let mut new_owner_list = Vec::new(&env);
+        for id in owner_list.iter() {
+            if !waste_ids.contains(&id) {
+                new_owner_list.push_back(id);
+            }
+        }
+        new_owner_list.push_back(merged_id);
+        env.storage()
+            .instance()
+            .set(&("participant_wastes", owner.clone()), &new_owner_list);
+
+        // Deactivate all source wastes
+        for waste_id in waste_ids.iter() {
+            let mut waste: types::Waste = env
+                .storage()
+                .instance()
+                .get(&("waste_v2", waste_id))
+                .unwrap();
+            waste.deactivate();
+            env.storage()
+                .instance()
+                .set(&("waste_v2", waste_id), &waste);
+        }
+
+        events::emit_wastes_merged(&env, merged_id, &owner, &waste_ids);
+
+        Ok(merged_id)
+    }
 }
