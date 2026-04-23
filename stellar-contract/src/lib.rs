@@ -8,9 +8,11 @@ mod test_transfer_path_validation;
 
 pub use errors::Error;
 pub use types::{
-    CollectionRoute, GlobalMetrics, Incentive, Material, ParticipantRole, RecyclingStats,
-    RouteStatus, TransferItemType, TransferRecord, TransferStatus, Waste, WasteTransfer, WasteType,
+    GlobalMetrics, Incentive, Material, ParticipantRole, ProcessingRecord, ProcessingStatus,
+    RecyclingStats, SeasonalMultiplier, TransferItemType, TransferRecord, TransferStatus, Waste,
+    WasteTransfer, WasteType,
 };
+pub use types::calculate_carbon_credits;
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String, Symbol, Vec,
@@ -27,7 +29,9 @@ const REENTRANCY_GUARD: Symbol = symbol_short!("RE_GUARD");
 const TOKEN_ADDR: Symbol = symbol_short!("TKN_ADDR");
 const PART_INDEX: Symbol = symbol_short!("PART_IDX");
 const PAUSED: Symbol = symbol_short!("PAUSED");
-const ROUTE_CNT: Symbol = symbol_short!("ROUTE_CNT");
+const SEASONAL_MUL: Symbol = symbol_short!("SEAS_MUL");
+const TOTAL_CARBON: Symbol = symbol_short!("TOT_CRBN");
+const CONTAMINATED_LIST: Symbol = symbol_short!("CONT_LST");
 
 /// Maximum allowed waste weight per submission (1 000 000 kg in grams).
 const MAX_WASTE_WEIGHT: u128 = 1_000_000_000;
@@ -498,6 +502,34 @@ impl ScavengerContract {
     /// `Some(Address)` if set via [`set_token_address`], `None` otherwise.
     pub fn get_token_address(env: Env) -> Option<Address> {
         env.storage().instance().get(&TOKEN_ADDR)
+    }
+
+    /// Set a seasonal reward multiplier (admin only).
+    ///
+    /// The multiplier is expressed in basis points: 100 = 1x, 150 = 1.5x, 500 = 5x (max).
+    /// It is active for rewards distributed between `start` and `end` (inclusive, Unix timestamps).
+    ///
+    /// # Errors
+    /// - Panics if `multiplier` is 0, < 100, or > 500.
+    /// - Panics if `start >= end`.
+    pub fn set_seasonal_multiplier(env: Env, admin: Address, multiplier: u32, start: u64, end: u64) {
+        Self::require_admin(&env, &admin);
+        assert!(multiplier >= 100 && multiplier <= 500, "Multiplier must be between 100 and 500 basis points");
+        assert!(start < end, "start must be before end");
+        let seasonal = SeasonalMultiplier { multiplier, start, end };
+        env.storage().instance().set(&SEASONAL_MUL, &seasonal);
+        events::emit_seasonal_multiplier_set(&env, multiplier, start, end);
+    }
+
+    /// Return the active seasonal multiplier in basis points, or 100 (1x) if none is active.
+    pub fn get_current_multiplier(env: Env) -> u32 {
+        let now = env.ledger().timestamp();
+        if let Some(s) = env.storage().instance().get::<_, SeasonalMultiplier>(&SEASONAL_MUL) {
+            if now >= s.start && now <= s.end {
+                return s.multiplier;
+            }
+        }
+        100
     }
 
     /// Manually reward tokens to a registered recipient.
@@ -1121,7 +1153,7 @@ impl ScavengerContract {
 
         for i in 1..=count {
             if let Some(incentive) = Self::get_incentive(&env, i) {
-                if incentive.waste_type == waste_type && incentive.active {
+                if incentive.waste_type == waste_type && Self::incentive_in_window(&incentive, env.ledger().timestamp()) {
                     // Keep results sorted by reward_points descending.
                     let mut inserted = false;
                     for idx in 0..results.len() {
@@ -1153,10 +1185,11 @@ impl ScavengerContract {
     pub fn get_active_incentives(env: Env) -> soroban_sdk::Vec<Incentive> {
         let mut results = soroban_sdk::Vec::new(&env);
         let count = Self::get_incentive_count(&env);
+        let now = env.ledger().timestamp();
 
         for i in 1..=count {
             if let Some(incentive) = Self::get_incentive(&env, i) {
-                if incentive.active {
+                if Self::incentive_in_window(&incentive, now) {
                     results.push_back(incentive);
                 }
             }
@@ -1638,7 +1671,16 @@ impl ScavengerContract {
         let waste_id = Self::next_waste_id(&env) as u128;
         let timestamp = env.ledger().timestamp();
 
+        // Look up per-type TTL; 0 means no expiry
+        let ttl: u64 = env
+            .storage()
+            .instance()
+            .get(&("waste_ttl", waste_type))
+            .unwrap_or(0u64);
+        let expires_at = if ttl > 0 { timestamp + ttl } else { 0u64 };
+
         let waste = types::Waste::new(
+            &env,
             waste_id,
             waste_type,
             weight,
@@ -1649,6 +1691,7 @@ impl ScavengerContract {
             true,
             false,
             recycler.clone(),
+            expires_at,
         );
 
         env.storage()
@@ -1690,6 +1733,74 @@ impl ScavengerContract {
             .instance()
             .get(&("participant_wastes", participant))
             .unwrap_or(Vec::new(&env))
+    }
+
+    /// Update the processing status of a v2 waste item.
+    ///
+    /// Only the current owner may call this. Status must advance forward
+    /// (Collected → Sorted → Processed → Recycled → Manufactured).
+    ///
+    /// # Panics
+    /// - `"Waste not found"` if the waste ID does not exist.
+    /// - `"Only current owner can update processing status"` if caller is not the owner.
+    /// - `"Status must progress forward"` if new status is not strictly greater.
+    pub fn update_processing_status(
+        env: Env,
+        waste_id: u128,
+        caller: Address,
+        new_status: ProcessingStatus,
+    ) -> types::Waste {
+        caller.require_auth();
+        Self::require_not_paused(&env);
+
+        let mut waste: types::Waste = env
+            .storage()
+            .instance()
+            .get(&("waste_v2", waste_id))
+            .expect("Waste not found");
+
+        assert!(waste.current_owner == caller, "Only current owner can update processing status");
+        assert!(
+            new_status.to_u32() > waste.processing_status.to_u32(),
+            "Status must progress forward"
+        );
+
+        let timestamp = env.ledger().timestamp();
+        waste.processing_status = new_status;
+        waste.processing_history.push_back(ProcessingRecord {
+            status: new_status,
+            timestamp,
+            updated_by: caller.clone(),
+        });
+
+        env.storage().instance().set(&("waste_v2", waste_id), &waste);
+        events::emit_processing_status_changed(&env, waste_id, new_status.to_u32(), &caller, timestamp);
+
+        waste
+    }
+
+    /// Return all v2 waste IDs whose current processing status matches `status`.
+    ///
+    /// Scans the global waste ID counter and checks each stored waste item.
+    pub fn get_wastes_by_status(env: Env, status: ProcessingStatus) -> Vec<u128> {
+        let count: u64 = env
+            .storage()
+            .instance()
+            .get(&("waste_count",))
+            .unwrap_or(0);
+        let mut result = Vec::new(&env);
+        for id in 1u128..=(count as u128) {
+            if let Some(w) = env
+                .storage()
+                .instance()
+                .get::<_, types::Waste>(&("waste_v2", id))
+            {
+                if w.processing_status == status {
+                    result.push_back(id);
+                }
+            }
+        }
+        result
     }
 
     /// Transfer a v2 waste item between participants with location tracking.
@@ -1747,9 +1858,21 @@ impl ScavengerContract {
             return Err(Error::WasteDeactivated);
         }
 
+        if waste.is_expired(env.ledger().timestamp()) {
+            return Err(Error::WasteExpired);
+        }
+
         // Route check after registration checks, before any storage mutation
         if !Self::is_valid_transfer(&env, from.clone(), to.clone()) {
             return Err(Error::InvalidTransferRoute);
+        }
+
+        // Reservation check: block transfer if waste is reserved by someone other than `to`
+        let now = env.ledger().timestamp();
+        if let (Some(reserver), Some(until)) = (waste.reserved_by.clone(), waste.reserved_until) {
+            if until > now && reserver != to {
+                return Err(Error::WasteReservedByOther);
+            }
         }
 
         waste.transfer_to(to.clone());
@@ -1845,7 +1968,9 @@ impl ScavengerContract {
                 return Err(Error::WasteDeactivated);
             }
 
-            // Get the current owner
+            if waste.is_expired(env.ledger().timestamp()) {
+                return Err(Error::WasteExpired);
+            }
             let from = waste.current_owner.clone();
 
             Self::require_addresses_different(&from, &to);
@@ -1999,6 +2124,7 @@ impl ScavengerContract {
         let timestamp = env.ledger().timestamp();
 
         let waste = types::Waste::new(
+            &env,
             waste_id,
             waste_type,
             0,
@@ -2009,6 +2135,7 @@ impl ScavengerContract {
             true,
             false,
             manufacturer.clone(),
+            0,
         );
 
         env.storage()
@@ -2191,15 +2318,92 @@ impl ScavengerContract {
             .instance()
             .set(&("waste_v2", waste_id), &waste);
 
-        env.events().publish(
-            (soroban_sdk::symbol_short!("deactive"), waste_id),
-            (admin, env.ledger().timestamp()),
-        );
+        events::emit_waste_deactivated(&env, waste_id, &admin);
 
         waste
     }
 
-    /// Submit multiple waste materials in a single transaction (v1 API).
+    /// Deactivate multiple v2 waste records in a single transaction (admin only).
+    ///
+    /// Skips IDs that do not exist or are already deactivated, and continues
+    /// processing the remaining items. Emits a `WasteDeactivated` event for
+    /// each successfully deactivated item.
+    ///
+    /// # Parameters
+    /// - `waste_ids`: Vec of v2 waste IDs to deactivate.
+    /// - `admin`: Contract admin. Must sign.
+    ///
+    /// # Returns
+    /// Count of items that were successfully deactivated (`u32`).
+    pub fn batch_deactivate_waste(env: Env, waste_ids: Vec<u128>, admin: Address) -> u32 {
+        Self::only_admin(&env, &admin);
+
+        let mut count: u32 = 0;
+        for waste_id in waste_ids.iter() {
+            let entry: Option<types::Waste> = env.storage().instance().get(&("waste_v2", waste_id));
+            if let Some(mut waste) = entry {
+                if waste.is_active {
+                    waste.deactivate();
+                    env.storage().instance().set(&("waste_v2", waste_id), &waste);
+                    events::emit_waste_deactivated(&env, waste_id, &admin);
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+
+    // ========== Waste TTL / Expiration Functions ==========
+
+    /// Set the TTL (seconds) for a waste type. 0 disables expiry for that type.
+    /// Admin only. Applied to newly registered waste; does not retroactively change existing items.
+    pub fn set_waste_ttl(env: Env, admin: Address, waste_type: WasteType, ttl_seconds: u64) {
+        Self::only_admin(&env, &admin);
+        env.storage().instance().set(&("waste_ttl", waste_type), &ttl_seconds);
+    }
+
+    /// Get the configured TTL for a waste type (0 = no expiry).
+    pub fn get_waste_ttl(env: Env, waste_type: WasteType) -> u64 {
+        env.storage().instance().get(&("waste_ttl", waste_type)).unwrap_or(0)
+    }
+
+    /// Return IDs of all v2 waste items that have expired at the current ledger time.
+    pub fn get_expired_wastes(env: Env) -> Vec<u128> {
+        let now = env.ledger().timestamp();
+        let total = Self::get_waste_count(&env);
+        let mut result = Vec::new(&env);
+        for id in 1..=total {
+            let waste_id = id as u128;
+            if let Some(waste) = env.storage().instance().get::<_, types::Waste>(&("waste_v2", waste_id)) {
+                if waste.is_active && waste.is_expired(now) {
+                    result.push_back(waste_id);
+                }
+            }
+        }
+        result
+    }
+
+    /// Deactivate all expired v2 waste items. Admin only.
+    /// Emits WasteExpired for each item cleaned up.
+    /// Returns the count of items deactivated.
+    pub fn cleanup_expired_wastes(env: Env, admin: Address) -> u32 {
+        Self::only_admin(&env, &admin);
+        let now = env.ledger().timestamp();
+        let total = Self::get_waste_count(&env);
+        let mut count: u32 = 0;
+        for id in 1..=total {
+            let waste_id = id as u128;
+            if let Some(mut waste) = env.storage().instance().get::<_, types::Waste>(&("waste_v2", waste_id)) {
+                if waste.is_active && waste.is_expired(now) {
+                    waste.deactivate();
+                    env.storage().instance().set(&("waste_v2", waste_id), &waste);
+                    events::emit_waste_expired(&env, waste_id);
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
     ///
     /// More gas-efficient than repeated [`submit_material`] calls because stats
     /// and storage writes are batched. Emits no individual events per item.
@@ -2386,8 +2590,21 @@ impl ScavengerContract {
         material.verify();
         Self::set_waste(&env, material_id, &material);
 
-        // Calculate tokens earned
-        let tokens_earned = material.calculate_reward_points();
+        // Calculate tokens earned, reduced by contamination if applicable
+        let base_tokens = material.calculate_reward_points();
+        let tokens_earned: u64 = {
+            let v2: Option<types::Waste> = env
+                .storage()
+                .instance()
+                .get(&("waste_v2", material_id as u128));
+            match v2 {
+                Some(w) if w.is_contaminated && w.contamination_level > 50 => 0,
+                Some(w) if w.is_contaminated => {
+                    base_tokens * (100 - w.contamination_level as u64) / 100
+                }
+                _ => base_tokens,
+            }
+        };
 
         // Update submitter stats
         let mut stats: RecyclingStats = env
@@ -2400,6 +2617,14 @@ impl ScavengerContract {
         env.storage()
             .instance()
             .set(&("stats", material.submitter.clone()), &stats);
+
+        // Update global carbon credits counter
+        let credits = types::calculate_carbon_credits(material.waste_type, material.weight as u128);
+        let total_carbon: u128 = env.storage().instance().get(&TOTAL_CARBON).unwrap_or(0);
+        env.storage().instance().set(&TOTAL_CARBON, &(total_carbon + credits));
+
+        // Emit carbon credits earned event
+        events::emit_carbon_credits_earned(&env, &material.submitter, material.waste_type, material.weight as u128, credits);
 
         // Distribute token rewards using the helper which also emits TOKENS_REWARDED events
         Self::_reward_tokens(&env, material_id, tokens_earned as u128);
@@ -2467,6 +2692,14 @@ impl ScavengerContract {
                     .instance()
                     .set(&("stats", material.submitter.clone()), &stats);
 
+                // Update global carbon credits counter
+                let credits = types::calculate_carbon_credits(material.waste_type, material.weight as u128);
+                let total_carbon: u128 = env.storage().instance().get(&TOTAL_CARBON).unwrap_or(0);
+                env.storage().instance().set(&TOTAL_CARBON, &(total_carbon + credits));
+
+                // Emit carbon credits earned event
+                events::emit_carbon_credits_earned(&env, &material.submitter, material.waste_type, material.weight as u128, credits);
+
                 // Distribute token rewards using the helper which also emits TOKENS_REWARDED events
                 Self::_reward_tokens(&env, material_id, tokens_earned as u128);
 
@@ -2484,6 +2717,90 @@ impl ScavengerContract {
     /// at least one material, `None` otherwise.
     pub fn get_stats(env: Env, participant: Address) -> Option<RecyclingStats> {
         env.storage().instance().get(&("stats", participant))
+    }
+
+    /// Calculate carbon credits for a given waste type and weight in grams.
+    /// Returns grams of CO2 equivalent.
+    pub fn calculate_carbon_credits(waste_type: WasteType, weight_grams: u128) -> u128 {
+        types::calculate_carbon_credits(waste_type, weight_grams)
+    }
+
+    /// Get total carbon credits earned across all participants.
+    pub fn get_total_carbon_credits(env: Env) -> u128 {
+        env.storage().instance().get(&TOTAL_CARBON).unwrap_or(0)
+    }
+
+    /// Get carbon credits earned by a specific participant.
+    pub fn get_participant_carbon_credits(env: Env, participant: Address) -> u128 {
+        let stats: Option<RecyclingStats> = env.storage().instance().get(&("stats", participant));
+        stats.map(|s| s.carbon_credits_earned).unwrap_or(0)
+    }
+
+    /// Mark a v2 waste item as contaminated.
+    ///
+    /// Only a registered Recycler (verifier) may call this.
+    /// Contamination level must be 0-100. Reason must not exceed 200 chars.
+    /// Emits a `WasteContaminated` event.
+    pub fn mark_contaminated(
+        env: Env,
+        waste_id: u128,
+        verifier: Address,
+        level: u32,
+        reason: String,
+    ) -> types::Waste {
+        Self::require_not_paused(&env);
+        verifier.require_auth();
+
+        assert!(level <= 100, "Contamination level must be 0-100");
+        assert!(reason.len() <= 200, "Reason exceeds 200 characters");
+
+        let participant: Participant = env
+            .storage()
+            .instance()
+            .get(&(verifier.clone(),))
+            .expect("Verifier not registered");
+
+        assert!(participant.is_registered, "Verifier is not registered");
+        assert!(
+            participant.role.can_process_recyclables(),
+            "Only recyclers can mark contamination"
+        );
+
+        let mut waste: types::Waste = env
+            .storage()
+            .instance()
+            .get(&("waste_v2", waste_id))
+            .expect("Waste not found");
+
+        waste.is_contaminated = true;
+        waste.contamination_level = level;
+        waste.contamination_reason = reason;
+
+        env.storage().instance().set(&("waste_v2", waste_id), &waste);
+
+        // Append to contaminated list
+        let mut list: Vec<u128> = env
+            .storage()
+            .instance()
+            .get(&CONTAMINATED_LIST)
+            .unwrap_or(Vec::new(&env));
+        // Only add once
+        if !list.contains(&waste_id) {
+            list.push_back(waste_id);
+            env.storage().instance().set(&CONTAMINATED_LIST, &list);
+        }
+
+        events::emit_waste_contaminated(&env, waste_id, &verifier, level);
+
+        waste
+    }
+
+    /// Return all v2 waste IDs that have been marked as contaminated.
+    pub fn get_contaminated_wastes(env: Env) -> Vec<u128> {
+        env.storage()
+            .instance()
+            .get(&CONTAMINATED_LIST)
+            .unwrap_or(Vec::new(&env))
     }
 
     /// Get global supply-chain statistics.
@@ -2935,9 +3252,15 @@ impl ScavengerContract {
             .instance()
             .get(&TOTAL_TOKENS)
             .unwrap_or(0);
+        let total_carbon_credits: u128 = env
+            .storage()
+            .instance()
+            .get(&TOTAL_CARBON)
+            .unwrap_or(0);
         types::GlobalMetrics {
             total_wastes_count,
             total_tokens_earned,
+            total_carbon_credits,
         }
     }
 
@@ -2992,7 +3315,24 @@ impl ScavengerContract {
         assert!(incentive.active, "Incentive not active");
 
         let weight_kg = material.weight / 1000;
-        let total_reward = (incentive.reward_points as i128) * (weight_kg as i128);
+        let base_reward = (incentive.reward_points as i128) * (weight_kg as i128);
+        let multiplier = Self::get_current_multiplier(env.clone()) as i128;
+        let mut total_reward = (base_reward * multiplier) / 100;
+
+        // Apply contamination reduction if a v2 waste record exists for this ID
+        let v2_waste: Option<types::Waste> = env
+            .storage()
+            .instance()
+            .get(&("waste_v2", waste_id as u128));
+        if let Some(w) = v2_waste {
+            if w.is_contaminated {
+                if w.contamination_level > 50 {
+                    total_reward = 0;
+                } else {
+                    total_reward = total_reward * (100 - w.contamination_level as i128) / 100;
+                }
+            }
+        }
         assert!(
             (total_reward as u64) <= incentive.remaining_budget,
             "Insufficient incentive budget"
@@ -3048,5 +3388,484 @@ impl ScavengerContract {
         Self::add_to_total_tokens(&env, total_reward as u128);
 
         total_reward
+    }
+
+    /// Split a v2 waste item into multiple smaller items.
+    ///
+    /// The owner provides a list of weights that must sum to the original weight.
+    /// The original waste is deactivated and new child waste items are created,
+    /// inheriting the type, location, and owner. Transfer history is preserved
+    /// by copying the parent's history to each child. A `WasteSplit` event is emitted.
+    ///
+    /// # Parameters
+    /// - `waste_id`: ID of the v2 waste to split.
+    /// - `owner`: Current owner. Must sign and own the waste.
+    /// - `weights`: Vec of weights (in grams) for each child. Must sum to original weight.
+    ///
+    /// # Returns
+    /// `Vec<u128>` of the newly created child waste IDs.
+    ///
+    /// # Errors
+    /// - [`Error::WasteNotFound`] if no waste record exists for `waste_id`.
+    /// - [`Error::NotWasteOwner`] if `owner` does not own the waste.
+    /// - [`Error::WasteDeactivated`] if the waste is already deactivated.
+    /// - [`Error::TooFewSplits`] if fewer than 2 weights are provided.
+    /// - [`Error::TooManySplits`] if more than 10 weights are provided.
+    /// - [`Error::WeightMismatch`] if the weights do not sum to the original weight.
+    pub fn split_waste(
+        env: Env,
+        waste_id: u128,
+        owner: Address,
+        weights: Vec<u128>,
+    ) -> Result<Vec<u128>, Error> {
+        owner.require_auth();
+        Self::require_not_paused(&env);
+
+        // Load and validate the parent waste
+        let mut parent: types::Waste = match env
+            .storage()
+            .instance()
+            .get(&("waste_v2", waste_id))
+        {
+            Some(w) => w,
+            None => return Err(Error::WasteNotFound),
+        };
+
+        if parent.current_owner != owner {
+            return Err(Error::NotWasteOwner);
+        }
+
+        if !parent.is_active {
+            return Err(Error::WasteDeactivated);
+        }
+
+        let n = weights.len();
+        if n < 2 {
+            return Err(Error::TooFewSplits);
+        }
+        if n > 10 {
+            return Err(Error::TooManySplits);
+        }
+
+        // Validate weights sum equals parent weight
+        let mut total: u128 = 0;
+        for w in weights.iter() {
+            total = total.checked_add(w).ok_or(Error::Overflow)?;
+        }
+        if total != parent.weight {
+            return Err(Error::WeightMismatch);
+        }
+
+        // Load parent transfer history once
+        let parent_history: Vec<WasteTransfer> = env
+            .storage()
+            .instance()
+            .get(&("transfer_history", waste_id))
+            .unwrap_or(Vec::new(&env));
+
+        let timestamp = env.ledger().timestamp();
+        let mut child_ids: Vec<u128> = Vec::new(&env);
+
+        for w in weights.iter() {
+            let child_id = Self::next_waste_id(&env) as u128;
+
+            let child = types::Waste::new(
+                child_id,
+                parent.waste_type,
+                w,
+                owner.clone(),
+                parent.latitude,
+                parent.longitude,
+                timestamp,
+                true,
+                false,
+                owner.clone(),
+            );
+
+            env.storage()
+                .instance()
+                .set(&("waste_v2", child_id), &child);
+
+            // Copy parent transfer history to child
+            env.storage()
+                .instance()
+                .set(&("transfer_history", child_id), &parent_history);
+
+            // Add child to owner's waste list
+            let mut owner_list: Vec<u128> = env
+                .storage()
+                .instance()
+                .get(&("participant_wastes", owner.clone()))
+                .unwrap_or(Vec::new(&env));
+            owner_list.push_back(child_id);
+            env.storage()
+                .instance()
+                .set(&("participant_wastes", owner.clone()), &owner_list);
+
+            child_ids.push_back(child_id);
+        }
+
+        // Deactivate parent
+        parent.deactivate();
+        env.storage()
+            .instance()
+            .set(&("waste_v2", waste_id), &parent);
+
+        // Remove parent from owner's waste list
+        let owner_list: Vec<u128> = env
+            .storage()
+            .instance()
+            .get(&("participant_wastes", owner.clone()))
+            .unwrap_or(Vec::new(&env));
+        let mut new_owner_list = Vec::new(&env);
+        for id in owner_list.iter() {
+            if id != waste_id {
+                new_owner_list.push_back(id);
+            }
+        }
+        env.storage()
+            .instance()
+            .set(&("participant_wastes", owner.clone()), &new_owner_list);
+
+        events::emit_waste_split(&env, waste_id, &owner, &child_ids);
+
+        Ok(child_ids)
+    }
+
+    /// Merge multiple v2 waste items of the same type into a single new item.
+    ///
+    /// All source wastes must be owned by `owner`, active, share the same
+    /// [`WasteType`], and be at the same location. They are deactivated and a
+    /// new waste with the combined weight is created. Transfer histories are
+    /// aggregated (deduplicated by `waste_id`) into the merged item. A
+    /// `WastesMerged` event is emitted.
+    ///
+    /// # Parameters
+    /// - `waste_ids`: IDs of the v2 wastes to merge (2–20).
+    /// - `owner`: Current owner of all wastes. Must sign.
+    ///
+    /// # Returns
+    /// The new merged waste ID (`u128`).
+    ///
+    /// # Errors
+    /// - [`Error::TooFewWastes`] if fewer than 2 IDs are provided.
+    /// - [`Error::TooManyWastes`] if more than 20 IDs are provided.
+    /// - [`Error::WasteNotFound`] if any ID does not exist.
+    /// - [`Error::NotWasteOwner`] if `owner` does not own every waste.
+    /// - [`Error::WasteDeactivated`] if any waste is already deactivated.
+    /// - [`Error::WasteTypeMismatchMerge`] if wastes have different types.
+    /// - [`Error::LocationMismatch`] if wastes are at different locations.
+    pub fn merge_wastes(
+        env: Env,
+        waste_ids: Vec<u128>,
+        owner: Address,
+    ) -> Result<u128, Error> {
+        owner.require_auth();
+        Self::require_not_paused(&env);
+
+        let n = waste_ids.len();
+        if n < 2 {
+            return Err(Error::TooFewWastes);
+        }
+        if n > 20 {
+            return Err(Error::TooManyWastes);
+        }
+
+        // Validate all wastes and accumulate combined weight
+        let mut combined_weight: u128 = 0;
+        let mut ref_type: Option<types::WasteType> = None;
+        let mut ref_lat: Option<i128> = None;
+        let mut ref_lon: Option<i128> = None;
+
+        for waste_id in waste_ids.iter() {
+            let waste: types::Waste = env
+                .storage()
+                .instance()
+                .get(&("waste_v2", waste_id))
+                .ok_or(Error::WasteNotFound)?;
+
+            if waste.current_owner != owner {
+                return Err(Error::NotWasteOwner);
+            }
+            if !waste.is_active {
+                return Err(Error::WasteDeactivated);
+            }
+
+            match ref_type {
+                None => ref_type = Some(waste.waste_type),
+                Some(t) if t != waste.waste_type => return Err(Error::WasteTypeMismatchMerge),
+                _ => {}
+            }
+
+            match (ref_lat, ref_lon) {
+                (None, None) => {
+                    ref_lat = Some(waste.latitude);
+                    ref_lon = Some(waste.longitude);
+                }
+                (Some(lat), Some(lon)) if lat != waste.latitude || lon != waste.longitude => {
+                    return Err(Error::LocationMismatch);
+                }
+                _ => {}
+            }
+
+            combined_weight = combined_weight
+                .checked_add(waste.weight)
+                .ok_or(Error::Overflow)?;
+        }
+
+        let waste_type = ref_type.unwrap();
+        let latitude = ref_lat.unwrap();
+        let longitude = ref_lon.unwrap();
+        let timestamp = env.ledger().timestamp();
+
+        // Create merged waste
+        let merged_id = Self::next_waste_id(&env) as u128;
+        let merged = types::Waste::new(
+            merged_id,
+            waste_type,
+            combined_weight,
+            owner.clone(),
+            latitude,
+            longitude,
+            timestamp,
+            true,
+            false,
+            owner.clone(),
+        );
+        env.storage()
+            .instance()
+            .set(&("waste_v2", merged_id), &merged);
+
+        // Aggregate transfer histories (append all source histories)
+        let mut merged_history: Vec<WasteTransfer> = Vec::new(&env);
+        for waste_id in waste_ids.iter() {
+            let history: Vec<WasteTransfer> = env
+                .storage()
+                .instance()
+                .get(&("transfer_history", waste_id))
+                .unwrap_or(Vec::new(&env));
+            for record in history.iter() {
+                merged_history.push_back(record);
+            }
+        }
+        env.storage()
+            .instance()
+            .set(&("transfer_history", merged_id), &merged_history);
+
+        // Update owner waste list: remove sources, add merged
+        let owner_list: Vec<u128> = env
+            .storage()
+            .instance()
+            .get(&("participant_wastes", owner.clone()))
+            .unwrap_or(Vec::new(&env));
+        let mut new_owner_list = Vec::new(&env);
+        for id in owner_list.iter() {
+            if !waste_ids.contains(&id) {
+                new_owner_list.push_back(id);
+            }
+        }
+        new_owner_list.push_back(merged_id);
+        env.storage()
+            .instance()
+            .set(&("participant_wastes", owner.clone()), &new_owner_list);
+
+        // Deactivate all source wastes
+        for waste_id in waste_ids.iter() {
+            let mut waste: types::Waste = env
+                .storage()
+                .instance()
+                .get(&("waste_v2", waste_id))
+                .unwrap();
+            waste.deactivate();
+            env.storage()
+                .instance()
+                .set(&("waste_v2", waste_id), &waste);
+        }
+
+        events::emit_wastes_merged(&env, merged_id, &owner, &waste_ids);
+
+        Ok(merged_id)
+    }
+
+    /// Reserve a v2 waste item for a limited time.
+    ///
+    /// Only registered participants may reserve. The waste must be active and
+    /// not already reserved (or the previous reservation must have expired).
+    /// Emits a `WasteReserved` event.
+    ///
+    /// # Parameters
+    /// - `waste_id`: ID of the v2 waste to reserve.
+    /// - `reserver`: Registered participant making the reservation. Must sign.
+    /// - `duration`: Reservation duration in seconds.
+    ///
+    /// # Errors
+    /// - [`Error::WasteNotFound`] if the waste does not exist.
+    /// - [`Error::WasteDeactivated`] if the waste is inactive.
+    /// - [`Error::WasteAlreadyReserved`] if an active reservation exists.
+    pub fn reserve_waste(
+        env: Env,
+        waste_id: u128,
+        reserver: Address,
+        duration: u64,
+    ) -> Result<types::Waste, Error> {
+        reserver.require_auth();
+        Self::require_not_paused(&env);
+        Self::require_registered(&env, &reserver);
+
+        let mut waste: types::Waste = env
+            .storage()
+            .instance()
+            .get(&("waste_v2", waste_id))
+            .ok_or(Error::WasteNotFound)?;
+
+        if !waste.is_active {
+            return Err(Error::WasteDeactivated);
+        }
+
+        let now = env.ledger().timestamp();
+
+        // Block if an active (non-expired) reservation exists
+        if let (Some(_), Some(until)) = (waste.reserved_by.clone(), waste.reserved_until) {
+            if until > now {
+                return Err(Error::WasteAlreadyReserved);
+            }
+        }
+
+        let reserved_until = now.checked_add(duration).ok_or(Error::Overflow)?;
+        waste.reserved_by = Some(reserver.clone());
+        waste.reserved_until = Some(reserved_until);
+
+        env.storage()
+            .instance()
+            .set(&("waste_v2", waste_id), &waste);
+
+        events::emit_waste_reserved(&env, waste_id, &reserver, reserved_until);
+
+        Ok(waste)
+    }
+
+    /// Cancel a reservation on a v2 waste item.
+    ///
+    /// The reserver themselves or the waste owner may cancel. Emits a
+    /// `ReservationCancelled` event.
+    ///
+    /// # Parameters
+    /// - `waste_id`: ID of the v2 waste.
+    /// - `caller`: Reserver or current owner. Must sign.
+    ///
+    /// # Errors
+    /// - [`Error::WasteNotFound`] if the waste does not exist.
+    /// - [`Error::WasteNotReserved`] if no reservation exists.
+    /// - [`Error::NotReserver`] if caller is neither the reserver nor the owner.
+    pub fn cancel_reservation(
+        env: Env,
+        waste_id: u128,
+        caller: Address,
+    ) -> Result<types::Waste, Error> {
+        caller.require_auth();
+        Self::require_not_paused(&env);
+
+        let mut waste: types::Waste = env
+            .storage()
+            .instance()
+            .get(&("waste_v2", waste_id))
+            .ok_or(Error::WasteNotFound)?;
+
+        if waste.reserved_by.is_none() {
+            return Err(Error::WasteNotReserved);
+        }
+
+        let reserver = waste.reserved_by.clone().unwrap();
+        if caller != reserver && caller != waste.current_owner {
+            return Err(Error::NotReserver);
+        }
+
+        waste.reserved_by = None;
+        waste.reserved_until = None;
+
+        env.storage()
+            .instance()
+            .set(&("waste_v2", waste_id), &waste);
+
+        events::emit_reservation_cancelled(&env, waste_id, &caller);
+
+        Ok(waste)
+    }
+
+    /// Returns true if the incentive is active and within its scheduled time window.
+    fn incentive_in_window(incentive: &Incentive, now: u64) -> bool {
+        if !incentive.active {
+            return false;
+        }
+        if let Some(starts) = incentive.starts_at {
+            if now < starts {
+                return false;
+            }
+        }
+        if let Some(ends) = incentive.ends_at {
+            if now >= ends {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Set or update the activation schedule for an existing incentive.
+    ///
+    /// Only the original `rewarder` may schedule their incentive.
+    /// `starts_at` must be strictly less than `ends_at` when both are provided.
+    ///
+    /// # Parameters
+    /// - `incentive_id`: ID of the incentive to schedule.
+    /// - `rewarder`: Original creator. Must sign.
+    /// - `starts_at`: Optional UTC timestamp when the incentive becomes active.
+    /// - `ends_at`: Optional UTC timestamp when the incentive expires.
+    ///
+    /// # Errors
+    /// - Panics `"Incentive not found"` if the ID does not exist.
+    /// - [`Error::NotCreator`] if `rewarder` is not the original creator.
+    /// - [`Error::InvalidSchedule`] if `starts_at >= ends_at` (when both set),
+    ///   or if `ends_at` is already in the past.
+    pub fn schedule_incentive(
+        env: Env,
+        incentive_id: u64,
+        rewarder: Address,
+        starts_at: Option<u64>,
+        ends_at: Option<u64>,
+    ) -> Result<Incentive, Error> {
+        rewarder.require_auth();
+        Self::require_not_paused(&env);
+
+        let mut incentive: Incentive =
+            Self::get_incentive(&env, incentive_id).expect("Incentive not found");
+
+        if incentive.rewarder != rewarder {
+            return Err(Error::NotCreator);
+        }
+
+        let now = env.ledger().timestamp();
+
+        // ends_at must be in the future
+        if let Some(ends) = ends_at {
+            if ends <= now {
+                return Err(Error::InvalidSchedule);
+            }
+        }
+
+        // starts_at must be before ends_at when both provided
+        if let (Some(starts), Some(ends)) = (starts_at, ends_at) {
+            if starts >= ends {
+                return Err(Error::InvalidSchedule);
+            }
+        }
+
+        incentive.starts_at = starts_at;
+        incentive.ends_at = ends_at;
+
+        Self::set_incentive(&env, incentive_id, &incentive);
+
+        events::emit_incentive_scheduled(&env, incentive_id, &rewarder, starts_at, ends_at);
+
+        Ok(incentive)
     }
 }

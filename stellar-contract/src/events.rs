@@ -108,6 +108,20 @@ pub fn emit_admin_transferred(env: &Env, previous_admin: &Address) {
     env.events().publish((symbol_short!("adm_xfr"),), previous_admin);
 }
 
+pub fn emit_waste_expired(env: &Env, waste_id: u128) {
+    env.events().publish(
+        (symbol_short!("expired"), waste_id),
+        env.ledger().timestamp(),
+    );
+}
+
+pub fn emit_waste_deactivated(env: &Env, waste_id: u128, admin: &Address) {
+    env.events().publish(
+        (symbol_short!("deactive"), waste_id),
+        (admin, env.ledger().timestamp()),
+    );
+}
+
 pub fn emit_contract_paused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("paused"),), admin);
 }
@@ -116,18 +130,58 @@ pub fn emit_contract_unpaused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("unpaused"),), admin);
 }
 
-/// Emit event when a collection route is created.
-pub fn emit_route_created(env: &Env, route_id: u64, collector: &Address, waste_count: u32) {
+/// Emit event when an incentive schedule is set
+pub fn emit_incentive_scheduled(
+    env: &Env,
+    incentive_id: u64,
+    rewarder: &Address,
+    starts_at: Option<u64>,
+    ends_at: Option<u64>,
+) {
     env.events().publish(
-        (symbol_short!("rt_new"), route_id),
-        (collector, waste_count),
+        (symbol_short!("inc_sched"), incentive_id),
+        (rewarder, starts_at, ends_at),
     );
 }
 
-/// Emit event when a collection route is completed.
-pub fn emit_route_completed(env: &Env, route_id: u64, collector: &Address) {
+/// Emit event when a waste item is reserved
+pub fn emit_waste_reserved(env: &Env, waste_id: u128, reserved_by: &Address, reserved_until: u64) {
     env.events().publish(
-        (symbol_short!("rt_done"), route_id),
-        collector,
+        (symbol_short!("wst_res"), waste_id),
+        (reserved_by, reserved_until),
+    );
+}
+
+/// Emit event when a reservation is cancelled
+pub fn emit_reservation_cancelled(env: &Env, waste_id: u128, cancelled_by: &Address) {
+    env.events().publish(
+        (symbol_short!("res_cncl"), waste_id),
+        cancelled_by,
+    );
+}
+
+/// Emit event when multiple waste items are merged into one
+pub fn emit_wastes_merged(
+    env: &Env,
+    merged_id: u128,
+    owner: &Address,
+    source_ids: &soroban_sdk::Vec<u128>,
+) {
+    env.events().publish(
+        (symbol_short!("wst_mrgd"), merged_id),
+        (owner, source_ids),
+    );
+}
+
+/// Emit event when a waste item is split into multiple child items
+pub fn emit_waste_split(
+    env: &Env,
+    parent_id: u128,
+    owner: &Address,
+    child_ids: &soroban_sdk::Vec<u128>,
+) {
+    env.events().publish(
+        (symbol_short!("waste_spl"), parent_id),
+        (owner, child_ids),
     );
 }

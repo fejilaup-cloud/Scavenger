@@ -368,6 +368,7 @@ fn test_get_incentives_by_rewarder_all_waste_types() {
             WasteType::Paper => has_paper = true,
             WasteType::Glass => has_glass = true,
             WasteType::PetPlastic => has_pet_plastic = true,
+            WasteType::Organic | WasteType::Electronic => {}
         }
     }
 

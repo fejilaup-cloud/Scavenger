@@ -171,4 +171,43 @@ pub enum Error {
 
     /// (31) Insufficient budget for the reward.
     InsufficientBudget = 31,
+
+    /// (32) The number of splits exceeds the maximum allowed (10).
+    TooManySplits = 32,
+
+    /// (33) The sum of split weights does not equal the original waste weight.
+    WeightMismatch = 33,
+
+    /// (34) At least two split weights are required.
+    TooFewSplits = 34,
+
+    /// (35) Fewer than 2 waste IDs provided for merge.
+    TooFewWastes = 35,
+
+    /// (36) More than 20 waste IDs provided for merge.
+    TooManyWastes = 36,
+
+    /// (37) Not all wastes share the same WasteType.
+    WasteTypeMismatchMerge = 37,
+
+    /// (38) Not all wastes share the same location.
+    LocationMismatch = 38,
+
+    /// (39) Waste is already reserved by another participant.
+    WasteAlreadyReserved = 39,
+
+    /// (40) Waste is not reserved (cannot cancel a non-existent reservation).
+    WasteNotReserved = 40,
+
+    /// (41) Caller is not the reserver and not the owner; cannot cancel.
+    NotReserver = 41,
+
+    /// (42) Waste is reserved by someone else; transfer is blocked.
+    WasteReservedByOther = 42,
+
+    /// (43) starts_at is not before ends_at, or both are in the past.
+    InvalidSchedule = 43,
+    /// (32) The waste item has expired (TTL elapsed).
+    /// Returned by: `transfer_waste_v2`, `batch_transfer_waste`
+    WasteExpired = 32,
 }

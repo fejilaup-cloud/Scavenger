@@ -1,8 +1,7 @@
-import { Award, Users, Trophy, Star, TrendingUp } from 'lucide-react'
+import { Award, Trophy, Star, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { useAppTitle } from '@/hooks/useAppTitle'
-import { formatAddress } from '@/lib/helpers'
 
 interface LeaderboardEntry {
   rank: number
