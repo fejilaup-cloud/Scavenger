@@ -180,6 +180,18 @@ pub enum Error {
 
     /// (34) At least two split weights are required.
     TooFewSplits = 34,
+
+    /// (35) Fewer than 2 waste IDs provided for merge.
+    TooFewWastes = 35,
+
+    /// (36) More than 20 waste IDs provided for merge.
+    TooManyWastes = 36,
+
+    /// (37) Not all wastes share the same WasteType.
+    WasteTypeMismatchMerge = 37,
+
+    /// (38) Not all wastes share the same location.
+    LocationMismatch = 38,
     /// (32) The waste item has expired (TTL elapsed).
     /// Returned by: `transfer_waste_v2`, `batch_transfer_waste`
     WasteExpired = 32,

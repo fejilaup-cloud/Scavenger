@@ -130,6 +130,19 @@ pub fn emit_contract_unpaused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("unpaused"),), admin);
 }
 
+/// Emit event when multiple waste items are merged into one
+pub fn emit_wastes_merged(
+    env: &Env,
+    merged_id: u128,
+    owner: &Address,
+    source_ids: &soroban_sdk::Vec<u128>,
+) {
+    env.events().publish(
+        (symbol_short!("wst_mrgd"), merged_id),
+        (owner, source_ids),
+    );
+}
+
 /// Emit event when a waste item is split into multiple child items
 pub fn emit_waste_split(
     env: &Env,
