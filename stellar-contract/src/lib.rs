@@ -33,6 +33,22 @@ const SEASONAL_MUL: Symbol = symbol_short!("SEAS_MUL");
 const TOTAL_CARBON: Symbol = symbol_short!("TOT_CRBN");
 const CONTAMINATED_LIST: Symbol = symbol_short!("CONT_LST");
 
+// ── Reputation constants ──────────────────────────────────────────────────────
+const REP_MIN: i128 = -1000;
+const REP_MAX: i128 = 10_000;
+/// Points awarded for a verified waste submission
+const REP_VERIFY: i128 = 10;
+/// Points awarded for a successful waste transfer
+const REP_TRANSFER: i128 = 5;
+/// Points awarded for confirming waste details
+const REP_CONFIRM: i128 = 3;
+/// Points deducted for a rejected/failed action
+const REP_PENALTY: i128 = -15;
+/// Seconds in 30 days — inactivity window for decay
+const DECAY_WINDOW_SECS: u64 = 30 * 24 * 3600;
+/// Decay amount applied per inactive window
+const DECAY_AMOUNT: i128 = 10;
+
 /// Maximum allowed waste weight per submission (1 000 000 kg in grams).
 const MAX_WASTE_WEIGHT: u128 = 1_000_000_000;
 
@@ -73,6 +89,10 @@ pub struct Participant {
     pub total_tokens_earned: u128,
     /// Ledger timestamp at registration.
     pub registered_at: u64,
+    /// Reputation score in range [-1000, 10000].
+    pub reputation_score: i128,
+    /// Ledger timestamp of last activity (for decay).
+    pub last_active_at: u64,
 }
 
 /// Combined view of a participant and their recycling statistics.
@@ -681,6 +701,8 @@ impl ScavengerContract {
             total_waste_processed: 0,
             total_tokens_earned: 0,
             registered_at: env.ledger().timestamp(),
+            reputation_score: 0,
+            last_active_at: env.ledger().timestamp(),
         };
 
         // Store participant using helper function
@@ -1924,8 +1946,12 @@ impl ScavengerContract {
 
         env.events().publish(
             (soroban_sdk::symbol_short!("transfer"), waste_id),
-            (from, to, timestamp),
+            (from.clone(), to.clone(), timestamp),
         );
+
+        // Reputation: reward both parties for a successful transfer
+        Self::apply_reputation(&env, &from, REP_TRANSFER);
+        Self::apply_reputation(&env, &to, REP_TRANSFER);
 
         Ok(transfer)
     }
@@ -2224,6 +2250,11 @@ impl ScavengerContract {
             .set(&("waste_v2", waste_id), &waste);
 
         events::emit_waste_confirmed(&env, waste_id, &confirmer);
+
+        // Reputation: reward confirmer for timely confirmation
+        Self::apply_reputation(&env, &confirmer, REP_CONFIRM);
+        // Reputation: reward owner for having waste confirmed
+        Self::apply_reputation(&env, &waste.current_owner, REP_CONFIRM);
 
         waste
     }
@@ -2624,6 +2655,9 @@ impl ScavengerContract {
 
         // Distribute token rewards using the helper which also emits TOKENS_REWARDED events
         Self::_reward_tokens(&env, material_id, tokens_earned as u128);
+
+        // Reputation: reward submitter for verified waste
+        Self::apply_reputation(&env, &material.submitter, REP_VERIFY);
 
         material
     }
