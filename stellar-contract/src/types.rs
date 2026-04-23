@@ -215,6 +215,10 @@ pub struct Incentive {
     pub active: bool,
     /// Timestamp when the incentive was created
     pub created_at: u64,
+    /// Optional UTC timestamp when the incentive becomes active
+    pub starts_at: Option<u64>,
+    /// Optional UTC timestamp when the incentive expires
+    pub ends_at: Option<u64>,
 }
 
 impl Incentive {
@@ -236,6 +240,8 @@ impl Incentive {
             remaining_budget: total_budget,
             active: true,
             created_at,
+            starts_at: None,
+            ends_at: None,
         }
     }
 

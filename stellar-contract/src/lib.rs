@@ -1120,7 +1120,7 @@ impl ScavengerContract {
 
         for i in 1..=count {
             if let Some(incentive) = Self::get_incentive(&env, i) {
-                if incentive.waste_type == waste_type && incentive.active {
+                if incentive.waste_type == waste_type && Self::incentive_in_window(&incentive, env.ledger().timestamp()) {
                     // Keep results sorted by reward_points descending.
                     let mut inserted = false;
                     for idx in 0..results.len() {
@@ -1152,10 +1152,11 @@ impl ScavengerContract {
     pub fn get_active_incentives(env: Env) -> soroban_sdk::Vec<Incentive> {
         let mut results = soroban_sdk::Vec::new(&env);
         let count = Self::get_incentive_count(&env);
+        let now = env.ledger().timestamp();
 
         for i in 1..=count {
             if let Some(incentive) = Self::get_incentive(&env, i) {
-                if incentive.active {
+                if Self::incentive_in_window(&incentive, now) {
                     results.push_back(incentive);
                 }
             }
@@ -3345,5 +3346,82 @@ impl ScavengerContract {
         events::emit_reservation_cancelled(&env, waste_id, &caller);
 
         Ok(waste)
+    }
+
+    /// Returns true if the incentive is active and within its scheduled time window.
+    fn incentive_in_window(incentive: &Incentive, now: u64) -> bool {
+        if !incentive.active {
+            return false;
+        }
+        if let Some(starts) = incentive.starts_at {
+            if now < starts {
+                return false;
+            }
+        }
+        if let Some(ends) = incentive.ends_at {
+            if now >= ends {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Set or update the activation schedule for an existing incentive.
+    ///
+    /// Only the original `rewarder` may schedule their incentive.
+    /// `starts_at` must be strictly less than `ends_at` when both are provided.
+    ///
+    /// # Parameters
+    /// - `incentive_id`: ID of the incentive to schedule.
+    /// - `rewarder`: Original creator. Must sign.
+    /// - `starts_at`: Optional UTC timestamp when the incentive becomes active.
+    /// - `ends_at`: Optional UTC timestamp when the incentive expires.
+    ///
+    /// # Errors
+    /// - Panics `"Incentive not found"` if the ID does not exist.
+    /// - [`Error::NotCreator`] if `rewarder` is not the original creator.
+    /// - [`Error::InvalidSchedule`] if `starts_at >= ends_at` (when both set),
+    ///   or if `ends_at` is already in the past.
+    pub fn schedule_incentive(
+        env: Env,
+        incentive_id: u64,
+        rewarder: Address,
+        starts_at: Option<u64>,
+        ends_at: Option<u64>,
+    ) -> Result<Incentive, Error> {
+        rewarder.require_auth();
+        Self::require_not_paused(&env);
+
+        let mut incentive: Incentive =
+            Self::get_incentive(&env, incentive_id).expect("Incentive not found");
+
+        if incentive.rewarder != rewarder {
+            return Err(Error::NotCreator);
+        }
+
+        let now = env.ledger().timestamp();
+
+        // ends_at must be in the future
+        if let Some(ends) = ends_at {
+            if ends <= now {
+                return Err(Error::InvalidSchedule);
+            }
+        }
+
+        // starts_at must be before ends_at when both provided
+        if let (Some(starts), Some(ends)) = (starts_at, ends_at) {
+            if starts >= ends {
+                return Err(Error::InvalidSchedule);
+            }
+        }
+
+        incentive.starts_at = starts_at;
+        incentive.ends_at = ends_at;
+
+        Self::set_incentive(&env, incentive_id, &incentive);
+
+        events::emit_incentive_scheduled(&env, incentive_id, &rewarder, starts_at, ends_at);
+
+        Ok(incentive)
     }
 }

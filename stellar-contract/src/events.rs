@@ -130,6 +130,20 @@ pub fn emit_contract_unpaused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("unpaused"),), admin);
 }
 
+/// Emit event when an incentive schedule is set
+pub fn emit_incentive_scheduled(
+    env: &Env,
+    incentive_id: u64,
+    rewarder: &Address,
+    starts_at: Option<u64>,
+    ends_at: Option<u64>,
+) {
+    env.events().publish(
+        (symbol_short!("inc_sched"), incentive_id),
+        (rewarder, starts_at, ends_at),
+    );
+}
+
 /// Emit event when a waste item is reserved
 pub fn emit_waste_reserved(env: &Env, waste_id: u128, reserved_by: &Address, reserved_until: u64) {
     env.events().publish(
