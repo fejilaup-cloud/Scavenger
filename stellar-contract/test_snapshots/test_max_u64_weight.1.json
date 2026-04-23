@@ -110,7 +110,7 @@
                   "u32": 3
                 },
                 {
-                  "u64": 18446744073709551615
+                  "u64": 1000000000
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
@@ -191,7 +191,7 @@
                           "symbol": "TOT_WGT"
                         },
                         "val": {
-                          "u64": 18446744073709551615
+                          "u64": 1000000000
                         }
                       },
                       {
@@ -210,6 +210,38 @@
                             {
                               "key": {
                                 "symbol": "glass_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_a_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_b_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_c_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_d_count"
                               },
                               "val": {
                                 "u64": 0
@@ -276,7 +308,7 @@
                                 "symbol": "total_weight"
                               },
                               "val": {
-                                "u64": 18446744073709551615
+                                "u64": 1000000000
                               }
                             },
                             {
@@ -356,7 +388,7 @@
                                 "symbol": "weight"
                               },
                               "val": {
-                                "u64": 18446744073709551615
+                                "u64": 1000000000
                               }
                             }
                           ]
@@ -464,7 +496,7 @@
                               "val": {
                                 "u128": {
                                   "hi": 0,
-                                  "lo": 18446744073709551615
+                                  "lo": 1000000000
                                 }
                               }
                             }
@@ -1201,7 +1233,7 @@
                   "u32": 3
                 },
                 {
-                  "u64": 18446744073709551615
+                  "u64": 1000000000
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
@@ -1286,7 +1318,7 @@
                     "symbol": "weight"
                   },
                   "val": {
-                    "u64": 18446744073709551615
+                    "u64": 1000000000
                   }
                 }
               ]

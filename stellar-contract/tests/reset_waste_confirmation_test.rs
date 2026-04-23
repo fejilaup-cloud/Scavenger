@@ -4,7 +4,7 @@ use stellar_scavngr_contract::{
     ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
 };
 
-fn create_test_contract(env: &Env) -> (ScavengerContractClient, Address) {
+fn create_test_contract(env: &Env) -> (ScavengerContractClient<'_>, Address) {
     let contract_id = env.register_contract(None, ScavengerContract);
     let client = ScavengerContractClient::new(env, &contract_id);
 
@@ -58,11 +58,11 @@ fn test_reset_waste_confirmation() {
     let reset_waste = client.reset_waste_confirmation(&waste_id, &owner);
 
     // Verify confirmation is reset
-    assert_eq!(reset_waste.is_confirmed, false);
+    assert!(!reset_waste.is_confirmed);
 
     // Verify waste can be re-confirmed
     let reconfirmed = client.confirm_waste_details(&waste_id, &confirmer);
-    assert_eq!(reconfirmed.is_confirmed, true);
+    assert!(reconfirmed.is_confirmed);
 }
 
 #[test]

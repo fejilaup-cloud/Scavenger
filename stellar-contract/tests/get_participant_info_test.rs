@@ -1,7 +1,9 @@
 #![cfg(test)]
 
 use soroban_sdk::{testutils::Address as _, Address, Env, String};
-use stellar_scavngr_contract::{ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 // ========== Basic Functionality Tests ==========
 
@@ -14,19 +16,25 @@ fn test_get_participant_info_returns_participant_and_stats() {
     let user = Address::generate(&env);
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Get participant info
     let info = client.get_participant_info(&user);
 
     assert!(info.is_some());
     let info = info.unwrap();
-    
+
     // Verify participant data
     assert_eq!(info.participant.address, user);
     assert_eq!(info.participant.role, ParticipantRole::Collector);
     // registered_at is set by ledger timestamp (0 in test environment)
-    
+
     // Stats should be default/zero initially (no submissions yet)
     assert_eq!(info.stats.total_submissions, 0);
     assert_eq!(info.stats.total_weight, 0);
@@ -42,14 +50,20 @@ fn test_get_participant_info_with_stats() {
     let desc = String::from_str(&env, "Test material");
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material to create stats
     client.submit_material(&WasteType::Plastic, &5000, &user, &desc);
 
     // Get participant info
     let info = client.get_participant_info(&user).unwrap();
-    
+
     // Verify stats exist
     let stats = info.stats;
     assert_eq!(stats.participant, user);
@@ -79,15 +93,33 @@ fn test_get_participant_info_all_roles() {
     env.mock_all_auths();
     let contract_id = env.register_contract(None, ScavengerContract);
     let client = ScavengerContractClient::new(&env, &contract_id);
-    
+
     let recycler = Address::generate(&env);
     let collector = Address::generate(&env);
     let manufacturer = Address::generate(&env);
 
     // Register participants with different roles
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&collector, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&manufacturer, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &manufacturer,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Get info for each
     let recycler_info = client.get_participant_info(&recycler).unwrap();
@@ -97,7 +129,10 @@ fn test_get_participant_info_all_roles() {
     // Verify roles
     assert_eq!(recycler_info.participant.role, ParticipantRole::Recycler);
     assert_eq!(collector_info.participant.role, ParticipantRole::Collector);
-    assert_eq!(manufacturer_info.participant.role, ParticipantRole::Manufacturer);
+    assert_eq!(
+        manufacturer_info.participant.role,
+        ParticipantRole::Manufacturer
+    );
 }
 
 // ========== Statistics Integration Tests ==========
@@ -112,7 +147,13 @@ fn test_get_participant_info_stats_reflect_submissions() {
     let desc = String::from_str(&env, "Test");
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit multiple materials
     client.submit_material(&WasteType::Paper, &1000, &user, &desc);
@@ -142,8 +183,20 @@ fn test_get_participant_info_stats_reflect_verifications() {
     let desc = String::from_str(&env, "Test");
 
     // Register participants
-    client.register_participant(&collector, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit and verify material
     let material = client.submit_material(&WasteType::Metal, &5000, &collector, &desc);
@@ -168,7 +221,13 @@ fn test_get_participant_info_stats_current() {
     let desc = String::from_str(&env, "Test");
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     client.submit_material(&WasteType::Paper, &1000, &user, &desc);
@@ -196,7 +255,13 @@ fn test_get_participant_info_preserves_registration_time() {
     let user = Address::generate(&env);
 
     // Register participant
-    let participant = client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    let participant = client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
     let registration_time = participant.registered_at;
 
     // Get info
@@ -215,7 +280,13 @@ fn test_get_participant_info_after_role_update() {
     let user = Address::generate(&env);
 
     // Register as collector
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Update role to recycler
     client.update_role(&user, &ParticipantRole::Recycler);
@@ -235,15 +306,33 @@ fn test_get_participant_info_multiple_participants() {
     env.mock_all_auths();
     let contract_id = env.register_contract(None, ScavengerContract);
     let client = ScavengerContractClient::new(&env, &contract_id);
-    
+
     let user1 = Address::generate(&env);
     let user2 = Address::generate(&env);
     let user3 = Address::generate(&env);
 
     // Register multiple participants
-    client.register_participant(&user1, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user3, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user3,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Get info for each
     let info1 = client.get_participant_info(&user1);
@@ -270,7 +359,13 @@ fn test_get_participant_info_no_side_effects() {
     let user = Address::generate(&env);
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Get info multiple times
     let info1 = client.get_participant_info(&user).unwrap();
@@ -294,7 +389,13 @@ fn test_get_participant_info_with_all_waste_types() {
     let desc = String::from_str(&env, "Test");
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit all waste types
     client.submit_material(&WasteType::Paper, &1000, &user, &desc);
@@ -325,7 +426,13 @@ fn test_get_participant_info_consistency_with_get_participant() {
     let user = Address::generate(&env);
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Get via both methods
     let participant = client.get_participant(&user).unwrap();
@@ -347,7 +454,13 @@ fn test_get_participant_info_consistency_with_get_stats() {
     let desc = String::from_str(&env, "Test");
 
     // Register and submit
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
     client.submit_material(&WasteType::Paper, &1000, &user, &desc);
 
     // Get via both methods
@@ -372,7 +485,13 @@ fn test_get_participant_info_read_only() {
     let desc = String::from_str(&env, "Test");
 
     // Register and submit
-    client.register_participant(&user, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
     client.submit_material(&WasteType::Metal, &5000, &user, &desc);
 
     // Get info
@@ -384,6 +503,9 @@ fn test_get_participant_info_read_only() {
     let stats_after = info_after.stats;
 
     // Should be identical (read-only operation)
-    assert_eq!(stats_before.total_submissions, stats_after.total_submissions);
+    assert_eq!(
+        stats_before.total_submissions,
+        stats_after.total_submissions
+    );
     assert_eq!(stats_before.total_weight, stats_after.total_weight);
 }

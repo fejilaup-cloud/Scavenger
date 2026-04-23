@@ -106,6 +106,18 @@
                     "storage": [
                       {
                         "key": {
+                          "symbol": "PART_IDX"
+                        },
+                        "val": {
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
                           "vec": [
                             {
                               "string": "general_incentives"
@@ -807,7 +819,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Total budget must be greater than zero' from contract function 'Symbol(obj#131)'"
+                  "string": "caught panic 'Total budget must be greater than zero' from contract function 'Symbol(obj#139)'"
                 },
                 {
                   "u64": 1

@@ -9,13 +9,15 @@
 #![cfg(test)]
 
 use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env, String};
-use stellar_scavngr_contract::{ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn setup(env: &Env) -> (ScavengerContractClient, Address) {
+fn setup(env: &Env) -> (ScavengerContractClient<'_>, Address) {
     env.mock_all_auths();
     let id = env.register_contract(None, ScavengerContract);
     let client = ScavengerContractClient::new(env, &id);
@@ -135,7 +137,10 @@ fn regression_no_double_credit_to_submitter() {
     client.verify_material(&material.id, &recycler);
 
     let p = client.get_participant(&submitter).unwrap();
-    assert_eq!(p.total_tokens_earned, 100, "submitter should receive exactly 100 tokens");
+    assert_eq!(
+        p.total_tokens_earned, 100,
+        "submitter should receive exactly 100 tokens"
+    );
 }
 
 /// Verify that a collector in the chain still receives their share after the
@@ -189,7 +194,10 @@ fn bench_reward_config_single_read() {
     let own = client.get_owner_percentage().unwrap();
     let after = env.budget().cpu_instruction_cost();
 
-    println!("[bench] reward_config reads cpu_instructions={}", after - before);
+    println!(
+        "[bench] reward_config reads cpu_instructions={}",
+        after - before
+    );
     assert_eq!(col, 15);
     assert_eq!(own, 35);
 }

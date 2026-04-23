@@ -24,13 +24,6 @@ fn test_donate_zero_amount() {
         &0,
     );
     client.set_charity_contract(&admin, &charity);
-    client.register_participant(
-        &donor,
-        &ParticipantRole::Manufacturer,
-        &soroban_sdk::symbol_short!("Donor"),
-        &45_000_000,
-        &-93_000_000,
-    );
     client.donate_to_charity(&donor, &0);
 }
 

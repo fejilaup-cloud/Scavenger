@@ -78,6 +78,18 @@
                     "storage": [
                       {
                         "key": {
+                          "symbol": "PART_IDX"
+                        },
+                        "val": {
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
                           "vec": [
                             {
                               "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
@@ -489,7 +501,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Waste not found' from contract function 'Symbol(obj#45)'"
+                  "string": "caught panic 'Waste not found' from contract function 'Symbol(obj#49)'"
                 },
                 {
                   "u128": {

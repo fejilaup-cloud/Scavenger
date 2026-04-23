@@ -13,7 +13,13 @@ fn test_get_waste_returns_correct_data() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &stellar_scavngr_contract::ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &stellar_scavngr_contract::ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Plastic, &5000, &user, &description);
@@ -67,7 +73,13 @@ fn test_get_waste_multiple_materials() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &stellar_scavngr_contract::ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &stellar_scavngr_contract::ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit multiple materials
     let desc1 = String::from_str(&env, "Plastic bottles");
@@ -85,10 +97,10 @@ fn test_get_waste_multiple_materials() {
 
     assert_eq!(w1.waste_type, WasteType::Plastic);
     assert_eq!(w1.weight, 1000);
-    
+
     assert_eq!(w2.waste_type, WasteType::Metal);
     assert_eq!(w2.weight, 2000);
-    
+
     assert_eq!(w3.waste_type, WasteType::Glass);
     assert_eq!(w3.weight, 3000);
 }
@@ -105,12 +117,24 @@ fn test_get_waste_after_verification() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&submitter, &stellar_scavngr_contract::ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&verifier, &stellar_scavngr_contract::ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &submitter,
+        &stellar_scavngr_contract::ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &verifier,
+        &stellar_scavngr_contract::ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Paper, &4000, &submitter, &description);
-    
+
     // Verify it's not verified initially
     let waste_before = client.get_waste(&material.id).unwrap();
     assert!(!waste_before.verified);
@@ -134,7 +158,13 @@ fn test_get_waste_consistency() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &stellar_scavngr_contract::ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &stellar_scavngr_contract::ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Metal, &7000, &user, &description);
@@ -163,7 +193,13 @@ fn test_get_waste_all_waste_types() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &stellar_scavngr_contract::ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &stellar_scavngr_contract::ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit one of each waste type
     let desc = String::from_str(&env, "Test");
@@ -174,11 +210,26 @@ fn test_get_waste_all_waste_types() {
     let glass = client.submit_material(&WasteType::Glass, &5000, &user, &desc);
 
     // Verify all can be retrieved
-    assert_eq!(client.get_waste(&paper.id).unwrap().waste_type, WasteType::Paper);
-    assert_eq!(client.get_waste(&pet.id).unwrap().waste_type, WasteType::PetPlastic);
-    assert_eq!(client.get_waste(&plastic.id).unwrap().waste_type, WasteType::Plastic);
-    assert_eq!(client.get_waste(&metal.id).unwrap().waste_type, WasteType::Metal);
-    assert_eq!(client.get_waste(&glass.id).unwrap().waste_type, WasteType::Glass);
+    assert_eq!(
+        client.get_waste(&paper.id).unwrap().waste_type,
+        WasteType::Paper
+    );
+    assert_eq!(
+        client.get_waste(&pet.id).unwrap().waste_type,
+        WasteType::PetPlastic
+    );
+    assert_eq!(
+        client.get_waste(&plastic.id).unwrap().waste_type,
+        WasteType::Plastic
+    );
+    assert_eq!(
+        client.get_waste(&metal.id).unwrap().waste_type,
+        WasteType::Metal
+    );
+    assert_eq!(
+        client.get_waste(&glass.id).unwrap().waste_type,
+        WasteType::Glass
+    );
 }
 
 #[test]
@@ -205,7 +256,13 @@ fn test_get_waste_sequential_ids() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &stellar_scavngr_contract::ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &stellar_scavngr_contract::ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit materials and verify IDs are sequential
     let m1 = client.submit_material(&WasteType::Paper, &1000, &user, &description);
@@ -216,7 +273,7 @@ fn test_get_waste_sequential_ids() {
     assert!(client.get_waste(&m1.id).is_some());
     assert!(client.get_waste(&m2.id).is_some());
     assert!(client.get_waste(&m3.id).is_some());
-    
+
     // Verify IDs are sequential
     assert_eq!(m2.id, m1.id + 1);
     assert_eq!(m3.id, m2.id + 1);
@@ -233,7 +290,13 @@ fn test_get_waste_alias_compatibility() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &stellar_scavngr_contract::ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &stellar_scavngr_contract::ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Glass, &6000, &user, &description);
@@ -266,6 +329,6 @@ fn test_get_waste_error_handling() {
     assert!(client.get_waste(&1).is_none());
     assert!(client.get_waste(&100).is_none());
     assert!(client.get_waste(&999999).is_none());
-    
+
     // All should return None without panicking
 }

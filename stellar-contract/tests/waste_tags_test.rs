@@ -1,5 +1,7 @@
 use soroban_sdk::{testutils::Address as _, Address, Env, String, Symbol};
-use stellar_scavngr_contract::{ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 fn setup() -> (Env, ScavengerContractClient<'static>, Address) {
     let env = Env::default();
@@ -17,7 +19,7 @@ fn register(client: &ScavengerContractClient, env: &Env, role: ParticipantRole) 
     addr
 }
 
-fn recycle(client: &ScavengerContractClient, env: &Env, recycler: &Address) -> u128 {
+fn recycle(client: &ScavengerContractClient, _env: &Env, recycler: &Address) -> u128 {
     client.recycle_waste(&WasteType::Plastic, &5000u128, recycler, &0i128, &0i128)
 }
 
@@ -87,7 +89,11 @@ fn test_tag_too_long() {
     let recycler = register(&client, &env, ParticipantRole::Recycler);
     let waste_id = recycle(&client, &env, &recycler);
 
-    client.add_waste_tag(&waste_id, &tag(&env, "this_tag_is_way_too_long_for_the_limit"), &recycler);
+    client.add_waste_tag(
+        &waste_id,
+        &tag(&env, "this_tag_is_way_too_long_for_the_limit"),
+        &recycler,
+    );
 }
 
 // ── 6. Empty tag rejected ─────────────────────────────────────────────────────
@@ -148,9 +154,9 @@ fn test_get_wastes_by_tag() {
 
     let results = client.get_wastes_by_tag(&tag(&env, "recyclable"));
     assert_eq!(results.len(), 2);
-    assert!(results.contains(&id1));
-    assert!(results.contains(&id2));
-    assert!(!results.contains(&id3));
+    assert!(results.contains(id1));
+    assert!(results.contains(id2));
+    assert!(!results.contains(id3));
 }
 
 // ── 10. Only owner can add tags ───────────────────────────────────────────────

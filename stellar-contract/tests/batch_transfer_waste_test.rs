@@ -1,7 +1,11 @@
 use soroban_sdk::{
-    symbol_short, testutils::{Address as _, Events}, Address, Env, Vec,
+    symbol_short,
+    testutils::{Address as _, Events},
+    Address, Env, Vec,
 };
-use stellar_scavngr_contract::{ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 #[test]
 fn test_batch_transfer_basic() {
@@ -13,13 +17,43 @@ fn test_batch_transfer_basic() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
     // Create multiple waste items
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
-    let waste_id3 = client.recycle_waste(&WasteType::Paper, &1500, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id3 = client.recycle_waste(
+        &WasteType::Paper,
+        &1500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     // Batch transfer all three items
     let mut waste_ids = Vec::new(&env);
@@ -56,8 +90,20 @@ fn test_batch_transfer_empty_batch() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
     let waste_ids = Vec::new(&env);
     let transfers = client.batch_transfer_waste(&waste_ids, &collector, &41_000_000, &-75_000_000);
@@ -75,10 +121,28 @@ fn test_batch_transfer_single_item() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
-    let waste_id = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
+    let waste_id = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     let mut waste_ids = Vec::new(&env);
     waste_ids.push_back(waste_id);
@@ -100,10 +164,28 @@ fn test_batch_transfer_nonexistent_waste() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     let mut waste_ids = Vec::new(&env);
     waste_ids.push_back(waste_id1);
@@ -123,13 +205,43 @@ fn test_batch_transfer_mixed_ownership() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler1, &ParticipantRole::Recycler, &symbol_short!("Rec1"), &100, &200);
-    client.register_participant(&recycler2, &ParticipantRole::Recycler, &symbol_short!("Rec2"), &150, &250);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler1,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec1"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &recycler2,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec2"),
+        &150,
+        &250,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
     // Create waste items owned by different recyclers
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler1, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler2, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler1,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler2,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     // Verify initial ownership
     let waste1 = client.get_waste_v2(&waste_id1).unwrap();
@@ -140,12 +252,14 @@ fn test_batch_transfer_mixed_ownership() {
     // Each recycler can only transfer their own waste
     let mut waste_ids1 = Vec::new(&env);
     waste_ids1.push_back(waste_id1);
-    let transfers1 = client.batch_transfer_waste(&waste_ids1, &collector, &41_000_000, &-75_000_000);
+    let transfers1 =
+        client.batch_transfer_waste(&waste_ids1, &collector, &41_000_000, &-75_000_000);
     assert_eq!(transfers1.len(), 1);
 
     let mut waste_ids2 = Vec::new(&env);
     waste_ids2.push_back(waste_id2);
-    let transfers2 = client.batch_transfer_waste(&waste_ids2, &collector, &41_000_000, &-75_000_000);
+    let transfers2 =
+        client.batch_transfer_waste(&waste_ids2, &collector, &41_000_000, &-75_000_000);
     assert_eq!(transfers2.len(), 1);
 
     // Verify both are now owned by collector
@@ -168,11 +282,35 @@ fn test_batch_transfer_deactivated_waste() {
     env.mock_all_auths();
 
     client.initialize_admin(&admin);
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     // Deactivate one waste item
     client.deactivate_waste(&waste_id1, &admin);
@@ -197,16 +335,46 @@ fn test_batch_transfer_invalid_route() {
     let recycler2 = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec1"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
-    client.register_participant(&recycler2, &ParticipantRole::Recycler, &symbol_short!("Rec2"), &500, &600);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec1"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &recycler2,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec2"),
+        &500,
+        &600,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+
     // Transfer to collector first
     client.transfer_waste_v2(&waste_id1, &recycler, &collector, &41_000_000, &-75_000_000);
 
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &collector, &41_000_000, &-75_000_000);
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &collector,
+        &41_000_000,
+        &-75_000_000,
+    );
 
     let mut waste_ids = Vec::new(&env);
     waste_ids.push_back(waste_id1);
@@ -227,9 +395,21 @@ fn test_batch_transfer_unregistered_recipient() {
     let unregistered = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
 
-    let waste_id = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
+    let waste_id = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     let mut waste_ids = Vec::new(&env);
     waste_ids.push_back(waste_id);
@@ -247,8 +427,20 @@ fn test_batch_transfer_large_batch() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
     // Create 10 waste items
     let mut waste_ids = Vec::new(&env);
@@ -258,7 +450,7 @@ fn test_batch_transfer_large_batch() {
             &(2000 + i * 100),
             &recycler,
             &40_000_000,
-            &-74_000_000
+            &-74_000_000,
         );
         waste_ids.push_back(waste_id);
     }
@@ -266,7 +458,7 @@ fn test_batch_transfer_large_batch() {
     let transfers = client.batch_transfer_waste(&waste_ids, &collector, &41_000_000, &-75_000_000);
 
     assert_eq!(transfers.len(), 10);
-    
+
     // Verify all wastes are now owned by collector
     for waste_id in waste_ids.iter() {
         let waste = client.get_waste_v2(&waste_id).unwrap();
@@ -284,22 +476,46 @@ fn test_batch_transfer_events_emitted() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     let mut waste_ids = Vec::new(&env);
     waste_ids.push_back(waste_id1);
     waste_ids.push_back(waste_id2);
 
     let events_before = env.events().all().len();
-    
+
     client.batch_transfer_waste(&waste_ids, &collector, &41_000_000, &-75_000_000);
 
     let events_after = env.events().all().len();
-    
+
     // Should have emitted at least 2 new events (one for each waste transfer)
     assert!(events_after > events_before);
 }
@@ -314,11 +530,35 @@ fn test_batch_transfer_history_updated() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     let mut waste_ids = Vec::new(&env);
     waste_ids.push_back(waste_id1);
@@ -348,11 +588,35 @@ fn test_batch_transfer_participant_waste_lists_updated() {
     let collector = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     // Verify recycler owns both wastes initially
     let recycler_wastes_before = client.get_participant_wastes_v2(&recycler);
@@ -371,8 +635,8 @@ fn test_batch_transfer_participant_waste_lists_updated() {
     // Verify collector now owns both wastes
     let collector_wastes = client.get_participant_wastes_v2(&collector);
     assert_eq!(collector_wastes.len(), 2);
-    assert!(collector_wastes.contains(&waste_id1));
-    assert!(collector_wastes.contains(&waste_id2));
+    assert!(collector_wastes.contains(waste_id1));
+    assert!(collector_wastes.contains(waste_id2));
 }
 
 #[test]
@@ -387,12 +651,42 @@ fn test_batch_transfer_atomic_validation() {
     env.mock_all_auths();
 
     client.initialize_admin(&admin);
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
-    let waste_id3 = client.recycle_waste(&WasteType::Paper, &1500, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id3 = client.recycle_waste(
+        &WasteType::Paper,
+        &1500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     // Deactivate the second waste
     client.deactivate_waste(&waste_id2, &admin);
@@ -409,7 +703,7 @@ fn test_batch_transfer_atomic_validation() {
     // Verify NO transfers occurred (atomic validation)
     let waste1 = client.get_waste_v2(&waste_id1).unwrap();
     let waste3 = client.get_waste_v2(&waste_id3).unwrap();
-    
+
     // Both should still be owned by recycler
     assert_eq!(waste1.current_owner, recycler);
     assert_eq!(waste3.current_owner, recycler);
@@ -425,17 +719,42 @@ fn test_batch_transfer_recycler_to_manufacturer() {
     let manufacturer = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&manufacturer, &ParticipantRole::Manufacturer, &symbol_short!("Mfr"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &manufacturer,
+        &ParticipantRole::Manufacturer,
+        &symbol_short!("Mfr"),
+        &300,
+        &400,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     let mut waste_ids = Vec::new(&env);
     waste_ids.push_back(waste_id1);
     waste_ids.push_back(waste_id2);
 
-    let transfers = client.batch_transfer_waste(&waste_ids, &manufacturer, &41_000_000, &-75_000_000);
+    let transfers =
+        client.batch_transfer_waste(&waste_ids, &manufacturer, &41_000_000, &-75_000_000);
 
     assert_eq!(transfers.len(), 2);
     assert_eq!(transfers.get(0).unwrap().to, manufacturer);
@@ -453,12 +772,42 @@ fn test_batch_transfer_collector_to_manufacturer() {
     let manufacturer = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &300, &400);
-    client.register_participant(&manufacturer, &ParticipantRole::Manufacturer, &symbol_short!("Mfr"), &500, &600);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &manufacturer,
+        &ParticipantRole::Manufacturer,
+        &symbol_short!("Mfr"),
+        &500,
+        &600,
+    );
 
-    let waste_id1 = client.recycle_waste(&WasteType::Plastic, &2500, &recycler, &40_000_000, &-74_000_000);
-    let waste_id2 = client.recycle_waste(&WasteType::Metal, &3000, &recycler, &40_000_000, &-74_000_000);
+    let waste_id1 = client.recycle_waste(
+        &WasteType::Plastic,
+        &2500,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
+    let waste_id2 = client.recycle_waste(
+        &WasteType::Metal,
+        &3000,
+        &recycler,
+        &40_000_000,
+        &-74_000_000,
+    );
 
     // Transfer to collector first
     client.transfer_waste_v2(&waste_id1, &recycler, &collector, &41_000_000, &-75_000_000);
@@ -468,7 +817,8 @@ fn test_batch_transfer_collector_to_manufacturer() {
     waste_ids.push_back(waste_id1);
     waste_ids.push_back(waste_id2);
 
-    let transfers = client.batch_transfer_waste(&waste_ids, &manufacturer, &42_000_000, &-76_000_000);
+    let transfers =
+        client.batch_transfer_waste(&waste_ids, &manufacturer, &42_000_000, &-76_000_000);
 
     assert_eq!(transfers.len(), 2);
     assert_eq!(transfers.get(0).unwrap().from, collector);

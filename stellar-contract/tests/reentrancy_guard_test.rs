@@ -38,7 +38,7 @@ fn test_reentrancy_guard_donate_to_charity() {
 
     // Verify event was emitted
     let events = env.events().all();
-    assert!(events.len() > 0);
+    assert!(!events.is_empty());
 }
 
 #[test]

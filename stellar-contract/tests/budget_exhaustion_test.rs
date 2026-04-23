@@ -2,7 +2,7 @@
 
 use soroban_sdk::{testutils::Address as _, Address, Env};
 use stellar_scavngr_contract::{
-    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType, Error,
+    Error, ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
 };
 
 fn setup_test(env: &Env) -> (ScavengerContractClient<'_>, Address, Address, Address) {
@@ -50,12 +50,7 @@ fn test_exact_budget_exhaustion() {
 
     // Create incentive: 100 points per kg, budget 500
     // 5kg = 500 points (EXACT BUDGET)
-    let incentive = client.create_incentive(
-        &manufacturer,
-        &WasteType::Plastic,
-        &100,
-        &500,
-    );
+    let incentive = client.create_incentive(&manufacturer, &WasteType::Plastic, &100, &500);
 
     // Submit 5kg of plastic
     let desc = soroban_sdk::String::from_str(&env, "Test");
@@ -80,12 +75,7 @@ fn test_insufficient_budget_error() {
 
     // Create incentive: 100 points per kg, budget 400
     // 5kg = 500 points (OVER BUDGET)
-    let incentive = client.create_incentive(
-        &manufacturer,
-        &WasteType::Plastic,
-        &100,
-        &400,
-    );
+    let incentive = client.create_incentive(&manufacturer, &WasteType::Plastic, &100, &400);
 
     // Submit 5kg of plastic
     let desc = soroban_sdk::String::from_str(&env, "Test");
@@ -94,11 +84,8 @@ fn test_insufficient_budget_error() {
 
     // Try to claim reward - should fail with InsufficientBudget
     let result = client.try_claim_incentive_reward(&incentive.id, &material.id, &collector);
-    
-    assert_eq!(
-        result,
-        Err(Ok(Error::InsufficientBudget))
-    );
+
+    assert_eq!(result, Err(Ok(Error::InsufficientBudget)));
 
     // Verify budget remains unchanged and active
     let updated_incentive = client.get_incentive_by_id(&incentive.id).unwrap();

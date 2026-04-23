@@ -5,7 +5,7 @@ use stellar_scavngr_contract::{
     ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
 };
 
-fn setup_contract(env: &Env) -> (ScavengerContractClient, Address, Address, Address) {
+fn setup_contract(env: &Env) -> (ScavengerContractClient<'_>, Address, Address, Address) {
     env.mock_all_auths();
     let contract_id = env.register_contract(None, ScavengerContract);
     let client = ScavengerContractClient::new(env, &contract_id);
@@ -40,13 +40,7 @@ fn test_zero_weight_waste_registration() {
     let env = Env::default();
     let (client, _, recycler, _) = setup_contract(&env);
 
-    client.recycle_waste(
-        &WasteType::Plastic,
-        &0,
-        &recycler,
-        &1000000,
-        &2000000,
-    );
+    client.recycle_waste(&WasteType::Plastic, &0, &recycler, &1000000, &2000000);
 }
 
 #[test]
@@ -92,13 +86,7 @@ fn test_max_u128_waste_weight() {
 
     // MAX_WASTE_WEIGHT is 1_000_000_000 grams; values above it are rejected
     let max_weight: u128 = 1_000_000_000;
-    let waste_id = client.recycle_waste(
-        &WasteType::Glass,
-        &max_weight,
-        &recycler,
-        &0,
-        &0,
-    );
+    let waste_id = client.recycle_waste(&WasteType::Glass, &max_weight, &recycler, &0, &0);
 
     assert!(waste_id > 0);
 }
@@ -111,13 +99,7 @@ fn test_max_coordinates() {
     let max_lat = 90_000_000i128;
     let max_lon = 180_000_000i128;
 
-    let waste_id = client.recycle_waste(
-        &WasteType::Paper,
-        &1000,
-        &recycler,
-        &max_lat,
-        &max_lon,
-    );
+    let waste_id = client.recycle_waste(&WasteType::Paper, &1000, &recycler, &max_lat, &max_lon);
 
     assert!(waste_id > 0);
 }
@@ -383,7 +365,7 @@ fn test_update_nonexistent_participant_role() {
 #[should_panic(expected = "Admin already initialized")]
 fn test_double_admin_initialization() {
     let env = Env::default();
-    let (client, admin, _, _) = setup_contract(&env);
+    let (client, _admin, _, _) = setup_contract(&env);
 
     let new_admin = Address::generate(&env);
     client.initialize_admin(&new_admin);
@@ -406,7 +388,13 @@ fn test_non_creator_deactivate_incentive() {
 
     let other_manufacturer = Address::generate(&env);
     let name = soroban_sdk::symbol_short!("test");
-    client.register_participant(&other_manufacturer, &ParticipantRole::Manufacturer, &name, &0, &0);
+    client.register_participant(
+        &other_manufacturer,
+        &ParticipantRole::Manufacturer,
+        &name,
+        &0,
+        &0,
+    );
 
     let incentive = client.create_incentive(&manufacturer, &WasteType::Plastic, &100, &1000);
 
@@ -475,13 +463,7 @@ fn test_extreme_coordinates() {
     let min_lat = -90_000_000i128;
     let min_lon = -180_000_000i128;
 
-    let waste_id = client.recycle_waste(
-        &WasteType::Metal,
-        &1000,
-        &recycler,
-        &min_lat,
-        &min_lon,
-    );
+    let waste_id = client.recycle_waste(&WasteType::Metal, &1000, &recycler, &min_lat, &min_lon);
 
     assert!(waste_id > 0);
 }
@@ -509,7 +491,7 @@ fn test_deregistered_participant() {
     let (client, _, recycler, _) = setup_contract(&env);
 
     client.deregister_participant(&recycler);
-    
+
     let participant = client.get_participant(&recycler).unwrap();
     assert!(!participant.is_registered);
 }

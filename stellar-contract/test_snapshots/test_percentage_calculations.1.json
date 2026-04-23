@@ -86,26 +86,39 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
                         "key": {
-                          "symbol": "COL_PCT"
+                          "symbol": "RWD_CFG"
                         },
                         "val": {
-                          "u32": 15
-                        }
-                      },
-                      {
-                        "key": {
-                          "symbol": "OWN_PCT"
-                        },
-                        "val": {
-                          "u32": 35
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "collector_percentage"
+                              },
+                              "val": {
+                                "u32": 15
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "owner_percentage"
+                              },
+                              "val": {
+                                "u32": 35
+                              }
+                            }
+                          ]
                         }
                       }
                     ]

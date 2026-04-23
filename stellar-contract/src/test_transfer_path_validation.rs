@@ -2,7 +2,7 @@
 
 use crate::types::{ParticipantRole, WasteType};
 use crate::{ScavengerContract, ScavengerContractClient};
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env, Error};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -327,7 +327,10 @@ fn prop4_invalid_route_transfer_leaves_state_unchanged() {
         client.transfer_waste_v2(&waste_id, &recycler, &collector, &0, &0);
         let result = client.try_transfer_waste_v2(&waste_id, &collector, &recycler, &0, &0);
         assert!(result.is_err());
-        assert_eq!(client.get_waste_v2(&waste_id).unwrap().current_owner, collector);
+        assert_eq!(
+            client.get_waste_v2(&waste_id).unwrap().current_owner,
+            collector
+        );
     }
 
     // (Collector → Collector)
@@ -352,7 +355,10 @@ fn prop4_invalid_route_transfer_leaves_state_unchanged() {
         client.transfer_waste_v2(&waste_id, &recycler, &manufacturer, &0, &0);
         let result = client.try_transfer_waste_v2(&waste_id, &manufacturer, &recycler, &0, &0);
         assert!(result.is_err());
-        assert_eq!(client.get_waste_v2(&waste_id).unwrap().current_owner, manufacturer);
+        assert_eq!(
+            client.get_waste_v2(&waste_id).unwrap().current_owner,
+            manufacturer
+        );
     }
 
     // (Manufacturer → Collector)
@@ -365,7 +371,10 @@ fn prop4_invalid_route_transfer_leaves_state_unchanged() {
         client.transfer_waste_v2(&waste_id, &recycler, &manufacturer, &0, &0);
         let result = client.try_transfer_waste_v2(&waste_id, &manufacturer, &collector, &0, &0);
         assert!(result.is_err());
-        assert_eq!(client.get_waste_v2(&waste_id).unwrap().current_owner, manufacturer);
+        assert_eq!(
+            client.get_waste_v2(&waste_id).unwrap().current_owner,
+            manufacturer
+        );
     }
 
     // (Manufacturer → Manufacturer)

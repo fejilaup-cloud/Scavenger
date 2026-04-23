@@ -1,7 +1,13 @@
 #![cfg(test)]
 
-use soroban_sdk::{symbol_short, testutils::{Address as _, Ledger}, Address, Env, String};
-use stellar_scavngr_contract::{ScavengerContract, ScavengerContractClient, ParticipantRole, WasteType};
+use soroban_sdk::{
+    symbol_short,
+    testutils::{Address as _, Ledger},
+    Address, Env, String,
+};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 #[test]
 fn test_get_waste_transfer_history_returns_complete_history() {
@@ -17,9 +23,27 @@ fn test_get_waste_transfer_history_returns_complete_history() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user3, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user3,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Plastic, &5000, &user1, &description);
@@ -35,13 +59,13 @@ fn test_get_waste_transfer_history_returns_complete_history() {
 
     // Verify complete history
     assert_eq!(history.len(), 2);
-    
+
     // First transfer
     let transfer1 = history.get(0).unwrap();
     assert_eq!(transfer1.waste_id, material.id as u128);
     assert_eq!(transfer1.from, user1);
     assert_eq!(transfer1.to, user2);
-    
+
     // Second transfer
     let transfer2 = history.get(1).unwrap();
     assert_eq!(transfer2.waste_id, material.id as u128);
@@ -55,7 +79,7 @@ fn test_get_waste_transfer_history_chronological_order() {
     env.ledger().with_mut(|li| {
         li.timestamp = 1000;
     });
-    
+
     let contract_id = env.register_contract(None, ScavengerContract);
     let client = ScavengerContractClient::new(&env, &contract_id);
 
@@ -67,21 +91,39 @@ fn test_get_waste_transfer_history_chronological_order() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user3, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user3,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Metal, &3000, &user1, &description);
 
     // First transfer at timestamp 1000
     client.transfer_waste(&material.id, &user1, &user2, &note);
-    
+
     // Advance time
     env.ledger().with_mut(|li| {
         li.timestamp = 2000;
     });
-    
+
     // Second transfer at timestamp 2000
     client.transfer_waste(&material.id, &user2, &user3, &note);
 
@@ -90,10 +132,10 @@ fn test_get_waste_transfer_history_chronological_order() {
 
     // Verify chronological order
     assert_eq!(history.len(), 2);
-    
+
     let transfer1 = history.get(0).unwrap();
     let transfer2 = history.get(1).unwrap();
-    
+
     // First transfer should have earlier timestamp
     assert!(transfer1.transferred_at < transfer2.transferred_at);
     assert_eq!(transfer1.transferred_at, 1000);
@@ -113,8 +155,20 @@ fn test_get_waste_transfer_history_includes_all_details() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&sender, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&receiver, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &sender,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &receiver,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Glass, &4000, &sender, &description);
@@ -127,7 +181,7 @@ fn test_get_waste_transfer_history_includes_all_details() {
 
     // Verify all details are included
     assert_eq!(history.len(), 1);
-    
+
     let transfer = history.get(0).unwrap();
     assert_eq!(transfer.waste_id, material.id as u128);
     assert_eq!(transfer.from, sender);
@@ -147,7 +201,13 @@ fn test_get_waste_transfer_history_empty_for_no_transfers() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material but don't transfer
     let material = client.submit_material(&WasteType::Paper, &2000, &user, &description);
@@ -187,9 +247,27 @@ fn test_get_waste_transfer_history_multiple_wastes_separate() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user3, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user3,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit two materials
     let material1 = client.submit_material(&WasteType::Plastic, &1000, &user1, &description);
@@ -226,8 +304,20 @@ fn test_get_waste_transfer_history_immutable() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Glass, &3000, &user1, &description);
@@ -260,10 +350,34 @@ fn test_get_waste_transfer_history_long_chain() {
     let note = String::from_str(&env, "Transfer");
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("r"), &0, &0);
-    client.register_participant(&collector1, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("c1"), &0, &0);
-    client.register_participant(&collector2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("c2"), &0, &0);
-    client.register_participant(&manufacturer, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("m"), &0, &0);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("r"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &collector1,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("c1"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &collector2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("c2"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &manufacturer,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("m"),
+        &0,
+        &0,
+    );
 
     // Submit material with recycler
     let material = client.submit_material(&WasteType::Paper, &5000, &recycler, &description);
@@ -300,9 +414,27 @@ fn test_get_waste_transfer_history_with_different_notes() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user3, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user3,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Metal, &6000, &user1, &description);
@@ -333,8 +465,20 @@ fn test_get_waste_transfer_history_alias_compatibility() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Plastic, &4000, &user1, &description);
@@ -365,8 +509,20 @@ fn test_get_waste_transfer_history_all_waste_types() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Test with each waste type
     let waste_types = vec![
@@ -380,7 +536,7 @@ fn test_get_waste_transfer_history_all_waste_types() {
     for waste_type in waste_types {
         let material = client.submit_material(&waste_type, &1000, &user1, &description);
         client.transfer_waste(&material.id, &user1, &user2, &note);
-        
+
         let history = client.get_waste_transfer_history(&material.id);
         assert_eq!(history.len(), 1);
         assert_eq!(history.get(0).unwrap().waste_id, material.id as u128);
@@ -401,9 +557,27 @@ fn test_get_waste_transfer_history_preserves_order_after_multiple_queries() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user3, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user3,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Glass, &5000, &user1, &description);
@@ -415,7 +589,7 @@ fn test_get_waste_transfer_history_preserves_order_after_multiple_queries() {
     // Query history multiple times
     for _ in 0..5 {
         let history = client.get_waste_transfer_history(&material.id);
-        
+
         // Verify order is always the same
         assert_eq!(history.len(), 2);
         assert_eq!(history.get(0).unwrap().from, user1);
@@ -438,8 +612,20 @@ fn test_get_waste_transfer_history_no_side_effects() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit material
     let material = client.submit_material(&WasteType::Metal, &3000, &user1, &description);

@@ -1,7 +1,9 @@
 #![cfg(test)]
 
 use soroban_sdk::{testutils::Address as _, Address, Env, String, Vec};
-use stellar_scavngr_contract::{ScavengerContract, ScavengerContractClient, ParticipantRole, WasteType};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 #[test]
 fn test_get_participant_wastes_returns_owned_ids() {
@@ -14,7 +16,13 @@ fn test_get_participant_wastes_returns_owned_ids() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit multiple materials
     let m1 = client.submit_material(&WasteType::Plastic, &1000, &user, &description);
@@ -26,9 +34,9 @@ fn test_get_participant_wastes_returns_owned_ids() {
 
     // Verify all waste IDs are returned
     assert_eq!(waste_ids.len(), 3);
-    assert!(waste_ids.contains(&m1.id));
-    assert!(waste_ids.contains(&m2.id));
-    assert!(waste_ids.contains(&m3.id));
+    assert!(waste_ids.contains(m1.id));
+    assert!(waste_ids.contains(m2.id));
+    assert!(waste_ids.contains(m3.id));
 }
 
 #[test]
@@ -41,7 +49,13 @@ fn test_get_participant_wastes_empty_result() {
     env.mock_all_auths();
 
     // Register participant but don't submit any wastes
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Get participant wastes
     let waste_ids = client.get_participant_wastes(&user);
@@ -77,8 +91,20 @@ fn test_get_participant_wastes_multiple_participants() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // User1 submits 2 wastes
     let m1 = client.submit_material(&WasteType::Paper, &1000, &user1, &description);
@@ -95,17 +121,17 @@ fn test_get_participant_wastes_multiple_participants() {
 
     // Verify correct wastes for each participant
     assert_eq!(user1_wastes.len(), 2);
-    assert!(user1_wastes.contains(&m1.id));
-    assert!(user1_wastes.contains(&m2.id));
+    assert!(user1_wastes.contains(m1.id));
+    assert!(user1_wastes.contains(m2.id));
 
     assert_eq!(user2_wastes.len(), 3);
-    assert!(user2_wastes.contains(&m3.id));
-    assert!(user2_wastes.contains(&m4.id));
-    assert!(user2_wastes.contains(&m5.id));
+    assert!(user2_wastes.contains(m3.id));
+    assert!(user2_wastes.contains(m4.id));
+    assert!(user2_wastes.contains(m5.id));
 
     // Verify no cross-contamination
-    assert!(!user1_wastes.contains(&m3.id));
-    assert!(!user2_wastes.contains(&m1.id));
+    assert!(!user1_wastes.contains(m3.id));
+    assert!(!user2_wastes.contains(m1.id));
 }
 
 #[test]
@@ -121,8 +147,20 @@ fn test_get_participant_wastes_updates_after_transfer() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&sender, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&receiver, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &sender,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &receiver,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Sender submits wastes
     let m1 = client.submit_material(&WasteType::Plastic, &1000, &sender, &description);
@@ -131,8 +169,8 @@ fn test_get_participant_wastes_updates_after_transfer() {
     // Verify sender owns both wastes
     let sender_wastes_before = client.get_participant_wastes(&sender);
     assert_eq!(sender_wastes_before.len(), 2);
-    assert!(sender_wastes_before.contains(&m1.id));
-    assert!(sender_wastes_before.contains(&m2.id));
+    assert!(sender_wastes_before.contains(m1.id));
+    assert!(sender_wastes_before.contains(m2.id));
 
     // Receiver owns no wastes
     let receiver_wastes_before = client.get_participant_wastes(&receiver);
@@ -147,12 +185,12 @@ fn test_get_participant_wastes_updates_after_transfer() {
 
     // Sender should only have m2 now
     assert_eq!(sender_wastes_after.len(), 1);
-    assert!(sender_wastes_after.contains(&m2.id));
-    assert!(!sender_wastes_after.contains(&m1.id));
+    assert!(sender_wastes_after.contains(m2.id));
+    assert!(!sender_wastes_after.contains(m1.id));
 
     // Receiver should have m1 now
     assert_eq!(receiver_wastes_after.len(), 1);
-    assert!(receiver_wastes_after.contains(&m1.id));
+    assert!(receiver_wastes_after.contains(m1.id));
 }
 
 #[test]
@@ -169,9 +207,27 @@ fn test_get_participant_wastes_after_multiple_transfers() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&user1, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user2, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&user3, &ParticipantRole::Manufacturer, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user1,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user2,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &user3,
+        &ParticipantRole::Manufacturer,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // User1 submits 3 wastes
     let m1 = client.submit_material(&WasteType::Paper, &1000, &user1, &description);
@@ -194,15 +250,15 @@ fn test_get_participant_wastes_after_multiple_transfers() {
 
     // User1 should only have m3
     assert_eq!(user1_wastes.len(), 1);
-    assert!(user1_wastes.contains(&m3.id));
+    assert!(user1_wastes.contains(m3.id));
 
     // User2 should have nothing
     assert_eq!(user2_wastes.len(), 0);
 
     // User3 should have m1 and m2
     assert_eq!(user3_wastes.len(), 2);
-    assert!(user3_wastes.contains(&m1.id));
-    assert!(user3_wastes.contains(&m2.id));
+    assert!(user3_wastes.contains(m1.id));
+    assert!(user3_wastes.contains(m2.id));
 }
 
 #[test]
@@ -216,7 +272,13 @@ fn test_get_participant_wastes_all_waste_types() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit one of each waste type
     let m1 = client.submit_material(&WasteType::Paper, &1000, &user, &description);
@@ -230,11 +292,11 @@ fn test_get_participant_wastes_all_waste_types() {
 
     // Verify all types are included
     assert_eq!(waste_ids.len(), 5);
-    assert!(waste_ids.contains(&m1.id));
-    assert!(waste_ids.contains(&m2.id));
-    assert!(waste_ids.contains(&m3.id));
-    assert!(waste_ids.contains(&m4.id));
-    assert!(waste_ids.contains(&m5.id));
+    assert!(waste_ids.contains(m1.id));
+    assert!(waste_ids.contains(m2.id));
+    assert!(waste_ids.contains(m3.id));
+    assert!(waste_ids.contains(m4.id));
+    assert!(waste_ids.contains(m5.id));
 }
 
 #[test]
@@ -248,7 +310,13 @@ fn test_get_participant_wastes_large_number() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit 10 wastes
     let mut expected_ids = Vec::new(&env);
@@ -270,7 +338,7 @@ fn test_get_participant_wastes_large_number() {
     // Verify all wastes are returned
     assert_eq!(waste_ids.len(), 10);
     for expected_id in expected_ids.iter() {
-        assert!(waste_ids.contains(&expected_id));
+        assert!(waste_ids.contains(expected_id));
     }
 }
 
@@ -285,7 +353,13 @@ fn test_get_participant_wastes_consistency() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit wastes
     client.submit_material(&WasteType::Paper, &1000, &user, &description);
@@ -301,8 +375,8 @@ fn test_get_participant_wastes_consistency() {
     assert_eq!(wastes2.len(), wastes3.len());
 
     for id in wastes1.iter() {
-        assert!(wastes2.contains(&id));
-        assert!(wastes3.contains(&id));
+        assert!(wastes2.contains(id));
+        assert!(wastes3.contains(id));
     }
 }
 
@@ -318,8 +392,20 @@ fn test_get_participant_wastes_after_verification() {
     env.mock_all_auths();
 
     // Register participants
-    client.register_participant(&submitter, &ParticipantRole::Collector, &soroban_sdk::symbol_short!("user"), &0, &0);
-    client.register_participant(&verifier, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Collector,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &verifier,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit waste
     let material = client.submit_material(&WasteType::Metal, &5000, &submitter, &description);
@@ -327,7 +413,7 @@ fn test_get_participant_wastes_after_verification() {
     // Get wastes before verification
     let wastes_before = client.get_participant_wastes(&submitter);
     assert_eq!(wastes_before.len(), 1);
-    assert!(wastes_before.contains(&material.id));
+    assert!(wastes_before.contains(material.id));
 
     // Verify the material
     client.verify_material(&material.id, &verifier);
@@ -335,7 +421,7 @@ fn test_get_participant_wastes_after_verification() {
     // Get wastes after verification - ownership should not change
     let wastes_after = client.get_participant_wastes(&submitter);
     assert_eq!(wastes_after.len(), 1);
-    assert!(wastes_after.contains(&material.id));
+    assert!(wastes_after.contains(material.id));
 }
 
 #[test]
@@ -349,7 +435,13 @@ fn test_get_participant_wastes_order() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit wastes in specific order
     let m1 = client.submit_material(&WasteType::Paper, &1000, &user, &description);
@@ -377,7 +469,13 @@ fn test_get_participant_wastes_no_side_effects() {
     env.mock_all_auths();
 
     // Register participant
-    client.register_participant(&user, &ParticipantRole::Recycler, &soroban_sdk::symbol_short!("user"), &0, &0);
+    client.register_participant(
+        &user,
+        &ParticipantRole::Recycler,
+        &soroban_sdk::symbol_short!("user"),
+        &0,
+        &0,
+    );
 
     // Submit waste
     let material = client.submit_material(&WasteType::Glass, &3000, &user, &description);

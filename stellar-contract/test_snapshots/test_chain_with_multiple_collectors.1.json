@@ -172,10 +172,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                 },
                 {
-                  "u32": 1
+                  "u32": 2
                 },
                 {
-                  "symbol": "Col2"
+                  "symbol": "Mfr"
                 },
                 {
                   "i128": {
@@ -341,26 +341,60 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "ADMIN"
+                          "symbol": "ADMINS"
                         },
                         "val": {
-                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                            }
+                          ]
                         }
                       },
                       {
                         "key": {
-                          "symbol": "COL_PCT"
+                          "symbol": "PART_IDX"
                         },
                         "val": {
-                          "u32": 10
+                          "vec": [
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                            },
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                            },
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                            },
+                            {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                            }
+                          ]
                         }
                       },
                       {
                         "key": {
-                          "symbol": "OWN_PCT"
+                          "symbol": "RWD_CFG"
                         },
                         "val": {
-                          "u32": 30
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "collector_percentage"
+                              },
+                              "val": {
+                                "u32": 10
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "owner_percentage"
+                              },
+                              "val": {
+                                "u32": 30
+                              }
+                            }
+                          ]
                         }
                       },
                       {
@@ -398,6 +432,38 @@
                             {
                               "key": {
                                 "symbol": "glass_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_a_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_b_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_c_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_d_count"
                               },
                               "val": {
                                 "u64": 0
@@ -494,6 +560,38 @@
                             {
                               "key": {
                                 "symbol": "glass_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_a_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_b_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_c_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_d_count"
                               },
                               "val": {
                                 "u64": 0
@@ -1156,7 +1254,7 @@
                                 "symbol": "name"
                               },
                               "val": {
-                                "symbol": "Col2"
+                                "symbol": "Mfr"
                               }
                             },
                             {
@@ -1172,7 +1270,7 @@
                                 "symbol": "role"
                               },
                               "val": {
-                                "u32": 1
+                                "u32": 2
                               }
                             },
                             {
@@ -2286,10 +2384,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                 },
                 {
-                  "u32": 1
+                  "u32": 2
                 },
                 {
-                  "symbol": "Col2"
+                  "symbol": "Mfr"
                 },
                 {
                   "i128": {
@@ -2328,10 +2426,10 @@
             "data": {
               "vec": [
                 {
-                  "u32": 1
+                  "u32": 2
                 },
                 {
-                  "symbol": "Col2"
+                  "symbol": "Mfr"
                 },
                 {
                   "i128": {
@@ -2412,7 +2510,7 @@
                     "symbol": "name"
                   },
                   "val": {
-                    "symbol": "Col2"
+                    "symbol": "Mfr"
                   }
                 },
                 {
@@ -2428,7 +2526,7 @@
                     "symbol": "role"
                   },
                   "val": {
-                    "u32": 1
+                    "u32": 2
                   }
                 },
                 {
@@ -2963,39 +3061,6 @@
                 {
                   "u128": {
                     "hi": 0,
-                    "lo": 10
-                  }
-                },
-                {
-                  "u64": 1
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "rewarded"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "u128": {
-                    "hi": 0,
                     "lo": 30
                   }
                 },
@@ -3029,7 +3094,7 @@
                 {
                   "u128": {
                     "hi": 0,
-                    "lo": 50
+                    "lo": 60
                   }
                 },
                 {
@@ -3476,7 +3541,7 @@
                     "symbol": "name"
                   },
                   "val": {
-                    "symbol": "Col2"
+                    "symbol": "Mfr"
                   }
                 },
                 {
@@ -3492,7 +3557,7 @@
                     "symbol": "role"
                   },
                   "val": {
-                    "u32": 1
+                    "u32": 2
                   }
                 },
                 {

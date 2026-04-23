@@ -1,11 +1,19 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::Address as _, Address, Env, String, Symbol};
+use soroban_sdk::{testutils::Address as _, Address, Env, String};
 use stellar_scavngr_contract::{
     ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
 };
 
-fn setup_full_ecosystem(env: &Env) -> (ScavengerContractClient, Address, Address, Address, Address) {
+fn setup_full_ecosystem(
+    env: &Env,
+) -> (
+    ScavengerContractClient<'_>,
+    Address,
+    Address,
+    Address,
+    Address,
+) {
     env.mock_all_auths();
     let contract_id = env.register_contract(None, ScavengerContract);
     let client = ScavengerContractClient::new(env, &contract_id);
@@ -18,9 +26,27 @@ fn setup_full_ecosystem(env: &Env) -> (ScavengerContractClient, Address, Address
     let name = soroban_sdk::symbol_short!("test");
 
     client.initialize_admin(&admin);
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &name, &1000000, &2000000);
-    client.register_participant(&collector, &ParticipantRole::Collector, &name, &1100000, &2100000);
-    client.register_participant(&manufacturer, &ParticipantRole::Manufacturer, &name, &1200000, &2200000);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &name,
+        &1000000,
+        &2000000,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &name,
+        &1100000,
+        &2100000,
+    );
+    client.register_participant(
+        &manufacturer,
+        &ParticipantRole::Manufacturer,
+        &name,
+        &1200000,
+        &2200000,
+    );
 
     (client, admin, recycler, collector, manufacturer)
 }
@@ -42,7 +68,8 @@ fn test_complete_recycler_to_collector_to_manufacturer_flow() {
     assert_eq!(transfer1.to, collector);
 
     // Step 3: Transfer from collector to manufacturer
-    let transfer2 = client.transfer_waste_v2(&waste_id, &collector, &manufacturer, &1200000, &2200000);
+    let transfer2 =
+        client.transfer_waste_v2(&waste_id, &collector, &manufacturer, &1200000, &2200000);
     assert_eq!(transfer2.from, collector);
     assert_eq!(transfer2.to, manufacturer);
 
@@ -202,7 +229,13 @@ fn test_parallel_supply_chains() {
 
     client.register_participant(&recycler2, &ParticipantRole::Recycler, &name, &0, &0);
     client.register_participant(&collector2, &ParticipantRole::Collector, &name, &0, &0);
-    client.register_participant(&manufacturer2, &ParticipantRole::Manufacturer, &name, &0, &0);
+    client.register_participant(
+        &manufacturer2,
+        &ParticipantRole::Manufacturer,
+        &name,
+        &0,
+        &0,
+    );
 
     // Chain 1
     let w1 = client.recycle_waste(&WasteType::Plastic, &3000, &recycler1, &0, &0);
@@ -249,7 +282,13 @@ fn test_multiple_incentives_same_waste_type() {
 
     let name = soroban_sdk::symbol_short!("test");
     let manufacturer2 = Address::generate(&env);
-    client.register_participant(&manufacturer2, &ParticipantRole::Manufacturer, &name, &0, &0);
+    client.register_participant(
+        &manufacturer2,
+        &ParticipantRole::Manufacturer,
+        &name,
+        &0,
+        &0,
+    );
 
     // Both manufacturers create incentives for plastic
     let i1 = client.create_incentive(&manufacturer, &WasteType::Plastic, &100, &5000);
@@ -322,7 +361,7 @@ fn test_global_statistics() {
     let recycler2 = Address::generate(&env);
     client.register_participant(&recycler2, &ParticipantRole::Recycler, &name, &0, &0);
 
-    let desc = String::from_str(&env, "Test");
+    let _desc = String::from_str(&env, "Test");
 
     // Multiple participants submit using new waste system
     client.recycle_waste(&WasteType::Plastic, &1000, &recycler, &0, &0);
@@ -398,7 +437,7 @@ fn test_confirmation_event_sequence() {
 
     // Transfer to collector
     client.transfer_waste_v2(&waste_id, &recycler, &collector, &0, &0);
-    
+
     // Manufacturer confirms (third party)
     client.confirm_waste_details(&waste_id, &manufacturer);
 
@@ -451,8 +490,20 @@ fn test_multi_manufacturer_competition() {
     let manufacturer2 = Address::generate(&env);
     let manufacturer3 = Address::generate(&env);
 
-    client.register_participant(&manufacturer2, &ParticipantRole::Manufacturer, &name, &0, &0);
-    client.register_participant(&manufacturer3, &ParticipantRole::Manufacturer, &name, &0, &0);
+    client.register_participant(
+        &manufacturer2,
+        &ParticipantRole::Manufacturer,
+        &name,
+        &0,
+        &0,
+    );
+    client.register_participant(
+        &manufacturer3,
+        &ParticipantRole::Manufacturer,
+        &name,
+        &0,
+        &0,
+    );
 
     // All manufacturers create competing incentives
     client.create_incentive(&manufacturer1, &WasteType::Plastic, &100, &10000);

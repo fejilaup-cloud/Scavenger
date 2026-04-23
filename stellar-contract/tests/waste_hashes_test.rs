@@ -1,5 +1,7 @@
 use soroban_sdk::{testutils::Address as _, Address, Env, String, Symbol};
-use stellar_scavngr_contract::{ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 fn setup() -> (Env, ScavengerContractClient<'static>, Address) {
     let env = Env::default();
@@ -13,7 +15,13 @@ fn setup() -> (Env, ScavengerContractClient<'static>, Address) {
 
 fn register_recycler(client: &ScavengerContractClient, env: &Env) -> Address {
     let addr = Address::generate(env);
-    client.register_participant(&addr, &ParticipantRole::Recycler, &Symbol::new(env, "r"), &0, &0);
+    client.register_participant(
+        &addr,
+        &ParticipantRole::Recycler,
+        &Symbol::new(env, "r"),
+        &0,
+        &0,
+    );
     addr
 }
 
@@ -21,7 +29,9 @@ fn recycle(client: &ScavengerContractClient, recycler: &Address) -> u128 {
     client.recycle_waste(&WasteType::Plastic, &1000u128, recycler, &0i128, &0i128)
 }
 
-fn s(env: &Env, v: &str) -> String { String::from_str(env, v) }
+fn s(env: &Env, v: &str) -> String {
+    String::from_str(env, v)
+}
 
 // ── 1. Set image hash (CIDv0 "Qm…") ─────────────────────────────────────────
 
@@ -31,7 +41,11 @@ fn test_set_image_hash_qm() {
     let recycler = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
 
-    let waste = client.set_waste_image(&id, &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"), &recycler);
+    let waste = client.set_waste_image(
+        &id,
+        &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"),
+        &recycler,
+    );
     assert!(waste.image_hash.is_some());
 }
 
@@ -43,7 +57,14 @@ fn test_set_image_hash_bafy() {
     let recycler = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
 
-    let waste = client.set_waste_image(&id, &s(&env, "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"), &recycler);
+    let waste = client.set_waste_image(
+        &id,
+        &s(
+            &env,
+            "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        ),
+        &recycler,
+    );
     assert!(waste.image_hash.is_some());
 }
 
@@ -78,7 +99,11 @@ fn test_only_owner_can_set_image() {
     let recycler = register_recycler(&client, &env);
     let other = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
-    client.set_waste_image(&id, &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"), &other);
+    client.set_waste_image(
+        &id,
+        &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"),
+        &other,
+    );
 }
 
 // ── 6. Add document hash ──────────────────────────────────────────────────────
@@ -89,7 +114,11 @@ fn test_add_document_hash() {
     let recycler = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
 
-    let waste = client.add_waste_document(&id, &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"), &recycler);
+    let waste = client.add_waste_document(
+        &id,
+        &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"),
+        &recycler,
+    );
     assert_eq!(waste.document_hashes.len(), 1);
 }
 
@@ -116,7 +145,11 @@ fn test_only_owner_can_add_document() {
     let recycler = register_recycler(&client, &env);
     let other = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
-    client.add_waste_document(&id, &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"), &other);
+    client.add_waste_document(
+        &id,
+        &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"),
+        &other,
+    );
 }
 
 // ── 9. Cannot set image on deactivated waste ──────────────────────────────────
@@ -128,7 +161,11 @@ fn test_cannot_set_image_on_deactivated_waste() {
     let recycler = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
     client.deactivate_waste(&id, &admin);
-    client.set_waste_image(&id, &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"), &recycler);
+    client.set_waste_image(
+        &id,
+        &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"),
+        &recycler,
+    );
 }
 
 // ── 10. Cannot add document on deactivated waste ──────────────────────────────
@@ -140,7 +177,11 @@ fn test_cannot_add_document_on_deactivated_waste() {
     let recycler = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
     client.deactivate_waste(&id, &admin);
-    client.add_waste_document(&id, &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"), &recycler);
+    client.add_waste_document(
+        &id,
+        &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"),
+        &recycler,
+    );
 }
 
 // ── 11. Image hash is replaced on second call ─────────────────────────────────
@@ -151,8 +192,15 @@ fn test_image_hash_replaced() {
     let recycler = register_recycler(&client, &env);
     let id = recycle(&client, &recycler);
 
-    client.set_waste_image(&id, &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"), &recycler);
-    let hash2 = s(&env, "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi");
+    client.set_waste_image(
+        &id,
+        &s(&env, "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"),
+        &recycler,
+    );
+    let hash2 = s(
+        &env,
+        "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    );
     let waste = client.set_waste_image(&id, &hash2.clone(), &recycler);
     assert_eq!(waste.image_hash.unwrap(), hash2);
 }

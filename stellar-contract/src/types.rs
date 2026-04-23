@@ -1,4 +1,3 @@
-
 use soroban_sdk::{contracttype, Address, String, Symbol};
 
 /// Represents a transfer record in the recycling system
@@ -60,7 +59,7 @@ pub enum TransferStatus {
 impl TransferItemType {
     /// Validates if the value is a valid TransferItemType variant
     pub fn is_valid(value: u32) -> bool {
-        matches!(value, 0 | 1 | 2 | 3)
+        matches!(value, 0..=3)
     }
 
     /// Converts a u32 to a TransferItemType
@@ -93,7 +92,7 @@ impl TransferItemType {
 impl TransferStatus {
     /// Validates if the value is a valid TransferStatus variant
     pub fn is_valid(value: u32) -> bool {
-        matches!(value, 0 | 1 | 2 | 3 | 4)
+        matches!(value, 0..=4)
     }
 
     /// Converts a u32 to a TransferStatus
@@ -138,8 +137,10 @@ impl TransferStatus {
     }
 }
 
+#[allow(dead_code)]
 impl TransferRecord {
     /// Creates a new TransferRecord with Pending status
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: u64,
         from: Address,
@@ -279,7 +280,6 @@ impl Incentive {
         }
         let reward = self.calculate_reward(weight_grams);
         reward <= self.remaining_budget
-
     }
 }
 
@@ -519,6 +519,7 @@ pub struct Waste {
 
 impl Waste {
     /// Creates a new Waste instance with all fields
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         env: &soroban_sdk::Env,
         waste_id: u128,
@@ -554,8 +555,8 @@ impl Waste {
     pub fn has_valid_coordinates(&self) -> bool {
         let max_lat = 90_000_000i128;
         let max_lon = 180_000_000i128;
-        
-        self.latitude >= -max_lat 
+
+        self.latitude >= -max_lat
             && self.latitude <= max_lat
             && self.longitude >= -max_lon
             && self.longitude <= max_lon
@@ -642,6 +643,7 @@ impl WasteTransfer {
 
 /// Builder pattern for constructing Waste instances
 /// Provides a fluent API for creating waste with optional fields
+#[allow(dead_code)]
 pub struct WasteBuilder {
     waste_id: u128,
     waste_type: WasteType,
@@ -656,6 +658,7 @@ pub struct WasteBuilder {
     grade: WasteGrade,
 }
 
+#[allow(dead_code)]
 impl WasteBuilder {
     /// Creates a new WasteBuilder with required fields
     pub fn new(
@@ -738,7 +741,6 @@ impl WasteBuilder {
         }
     }
 }
-
 
 /// Tracks recycling statistics for a participant
 #[contracttype]
@@ -982,7 +984,7 @@ mod recycling_stats_tests {
     #[test]
     fn test_stats_storage() {
         let env = soroban_sdk::Env::default();
-        let contract_id = env.register_contract(None, crate::ScavengerContract);
+        let _contract_id = env.register_contract(None, crate::ScavengerContract);
         let participant = Address::generate(&env);
 
         let stats = RecyclingStats::new(participant.clone());
@@ -1130,7 +1132,7 @@ mod material_tests {
     #[test]
     fn test_material_storage_compatibility() {
         let env = soroban_sdk::Env::default();
-        let contract_id = env.register_contract(None, crate::ScavengerContract);
+        let _contract_id = env.register_contract(None, crate::ScavengerContract);
         let submitter = Address::generate(&env);
         let description = String::from_str(&env, "Storage test");
 
@@ -1418,4 +1420,3 @@ pub struct GlobalMetrics {
     /// Total amount of tokens earned across all participants
     pub total_tokens_earned: u128,
 }
-

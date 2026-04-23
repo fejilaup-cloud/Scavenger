@@ -1,5 +1,11 @@
-use soroban_sdk::{symbol_short, testutils::{Address as _, Events}, Address, Env, TryIntoVal};
-use stellar_scavngr_contract::{ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType};
+use soroban_sdk::{
+    symbol_short,
+    testutils::{Address as _, Events},
+    Address, Env, TryIntoVal,
+};
+use stellar_scavngr_contract::{
+    ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
+};
 
 #[test]
 fn test_reward_calculation_paper() {
@@ -11,12 +17,29 @@ fn test_reward_calculation_paper() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
     // Paper: 5kg * 1 multiplier * 10 = 50 points
-    let material = client.submit_material(&WasteType::Paper, &5000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Paper,
+        &5000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant = client.get_participant(&submitter).unwrap();
@@ -33,12 +56,29 @@ fn test_reward_calculation_metal() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
     // Metal: 2kg * 5 multiplier * 10 = 100 points
-    let material = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant = client.get_participant(&submitter).unwrap();
@@ -55,12 +95,29 @@ fn test_reward_calculation_plastic() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
     // Plastic: 3kg * 2 multiplier * 10 = 60 points
-    let material = client.submit_material(&WasteType::Plastic, &3000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Plastic,
+        &3000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant = client.get_participant(&submitter).unwrap();
@@ -77,11 +134,28 @@ fn test_distribution_to_owner_with_default_percentages() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
-    let material = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant = client.get_participant(&submitter).unwrap();
@@ -104,15 +178,43 @@ fn test_distribution_with_collector() {
     client.initialize_admin(&admin);
     client.set_percentages(&admin, &10, &40);
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &500, &600);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &500,
+        &600,
+    );
 
-    let material = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     // Transfer to collector
-    client.transfer_waste(&material.id, &submitter, &collector, &soroban_sdk::String::from_str(&env, "transfer"));
-    
+    client.transfer_waste(
+        &material.id,
+        &submitter,
+        &collector,
+        &soroban_sdk::String::from_str(&env, "transfer"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let submitter_participant = client.get_participant(&submitter).unwrap();
@@ -174,15 +276,32 @@ fn test_recycler_gets_remainder() {
     client.initialize_admin(&admin);
     client.set_percentages(&admin, &5, &30);
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
-    let material = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant = client.get_participant(&submitter).unwrap();
-    
+
     // Total: 100 tokens
     // Collector: 5% = 5 (but no collector in chain)
     // Owner: 30% = 30
@@ -207,16 +326,55 @@ fn test_chain_with_multiple_collectors() {
     client.initialize_admin(&admin);
     client.set_percentages(&admin, &10, &30);
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
-    client.register_participant(&collector1, &ParticipantRole::Collector, &symbol_short!("Col1"), &500, &600);
-    client.register_participant(&manufacturer, &ParticipantRole::Manufacturer, &symbol_short!("Mfr"), &700, &800);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &collector1,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col1"),
+        &500,
+        &600,
+    );
+    client.register_participant(
+        &manufacturer,
+        &ParticipantRole::Manufacturer,
+        &symbol_short!("Mfr"),
+        &700,
+        &800,
+    );
 
-    let material = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
-    client.transfer_waste(&material.id, &submitter, &collector1, &soroban_sdk::String::from_str(&env, "t1"));
-    client.transfer_waste(&material.id, &collector1, &manufacturer, &soroban_sdk::String::from_str(&env, "t2"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
+    client.transfer_waste(
+        &material.id,
+        &submitter,
+        &collector1,
+        &soroban_sdk::String::from_str(&env, "t1"),
+    );
+    client.transfer_waste(
+        &material.id,
+        &collector1,
+        &manufacturer,
+        &soroban_sdk::String::from_str(&env, "t2"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let submitter_participant = client.get_participant(&submitter).unwrap();
@@ -247,14 +405,42 @@ fn test_short_chain_recycler_to_collector() {
     client.initialize_admin(&admin);
     client.set_percentages(&admin, &20, &50);
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &500, &600);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &500,
+        &600,
+    );
 
-    let material = client.submit_material(&WasteType::Paper, &10000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
-    client.transfer_waste(&material.id, &submitter, &collector, &soroban_sdk::String::from_str(&env, "transfer"));
-    
+    let material = client.submit_material(
+        &WasteType::Paper,
+        &10000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
+    client.transfer_waste(
+        &material.id,
+        &submitter,
+        &collector,
+        &soroban_sdk::String::from_str(&env, "transfer"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let submitter_participant = client.get_participant(&submitter).unwrap();
@@ -283,16 +469,55 @@ fn test_long_chain_distribution() {
     client.initialize_admin(&admin);
     client.set_percentages(&admin, &8, &40);
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
-    client.register_participant(&collector1, &ParticipantRole::Collector, &symbol_short!("C1"), &500, &600);
-    client.register_participant(&manufacturer, &ParticipantRole::Manufacturer, &symbol_short!("Mfr"), &700, &800);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &collector1,
+        &ParticipantRole::Collector,
+        &symbol_short!("C1"),
+        &500,
+        &600,
+    );
+    client.register_participant(
+        &manufacturer,
+        &ParticipantRole::Manufacturer,
+        &symbol_short!("Mfr"),
+        &700,
+        &800,
+    );
 
-    let material = client.submit_material(&WasteType::PetPlastic, &5000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
-    client.transfer_waste(&material.id, &submitter, &collector1, &soroban_sdk::String::from_str(&env, "t1"));
-    client.transfer_waste(&material.id, &collector1, &manufacturer, &soroban_sdk::String::from_str(&env, "t2"));
-    
+    let material = client.submit_material(
+        &WasteType::PetPlastic,
+        &5000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
+    client.transfer_waste(
+        &material.id,
+        &submitter,
+        &collector1,
+        &soroban_sdk::String::from_str(&env, "t1"),
+    );
+    client.transfer_waste(
+        &material.id,
+        &collector1,
+        &manufacturer,
+        &soroban_sdk::String::from_str(&env, "t2"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let submitter_participant = client.get_participant(&submitter).unwrap();
@@ -318,19 +543,36 @@ fn test_statistics_update_after_verification() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
     let participant_before = client.get_participant(&submitter).unwrap();
     assert_eq!(participant_before.total_tokens_earned, 0);
 
-    let material = client.submit_material(&WasteType::Glass, &4000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Glass,
+        &4000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant_after = client.get_participant(&submitter).unwrap();
     let stats_after = client.get_stats(&submitter).unwrap();
-    
+
     assert!(participant_after.total_tokens_earned > 0);
     assert_eq!(stats_after.verified_submissions, 1);
 }
@@ -345,18 +587,40 @@ fn test_multiple_verifications_accumulate_tokens() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
-    let material1 = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test1"));
-    let material2 = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test2"));
-    
+    let material1 = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test1"),
+    );
+    let material2 = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test2"),
+    );
+
     client.verify_material(&material1.id, &recycler);
     client.verify_material(&material2.id, &recycler);
 
     let participant = client.get_participant(&submitter).unwrap();
     let stats = client.get_stats(&submitter).unwrap();
-    
+
     assert_eq!(participant.total_tokens_earned, 200); // 100 + 100
     assert_eq!(stats.verified_submissions, 2);
 }
@@ -371,20 +635,42 @@ fn test_token_reward_event_emission() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
-    let material = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let events = env.events().all();
-    
+
     // Find token reward events by checking for "rewarded" symbol
     let has_reward_event = events.iter().any(|e| {
         let topics = &e.1;
-        if topics.len() > 0 {
-            if let Ok(symbol) = <soroban_sdk::Val as TryIntoVal<Env, soroban_sdk::Symbol>>::try_into_val(&topics.get(0).unwrap(), &env) {
+        if !topics.is_empty() {
+            if let Ok(symbol) =
+                <soroban_sdk::Val as TryIntoVal<Env, soroban_sdk::Symbol>>::try_into_val(
+                    &topics.get(0).unwrap(),
+                    &env,
+                )
+            {
                 return symbol == symbol_short!("rewarded");
             }
         }
@@ -404,14 +690,31 @@ fn test_participant_stats_update() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
     let participant_before = client.get_participant(&submitter).unwrap();
     assert_eq!(participant_before.total_tokens_earned, 0);
 
-    let material = client.submit_material(&WasteType::Plastic, &3000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Plastic,
+        &3000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant_after = client.get_participant(&submitter).unwrap();
@@ -428,12 +731,29 @@ fn test_zero_weight_zero_reward() {
     let submitter = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
 
     // Less than 1kg = 0 tokens
-    let material = client.submit_material(&WasteType::Metal, &500, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &500,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let participant = client.get_participant(&submitter).unwrap();
@@ -451,18 +771,46 @@ fn test_global_token_statistics() {
     let submitter2 = Address::generate(&env);
     env.mock_all_auths();
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter1, &ParticipantRole::Recycler, &symbol_short!("S1"), &300, &400);
-    client.register_participant(&submitter2, &ParticipantRole::Recycler, &symbol_short!("S2"), &500, &600);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter1,
+        &ParticipantRole::Recycler,
+        &symbol_short!("S1"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &submitter2,
+        &ParticipantRole::Recycler,
+        &symbol_short!("S2"),
+        &500,
+        &600,
+    );
 
-    let material1 = client.submit_material(&WasteType::Metal, &2000, &submitter1, &soroban_sdk::String::from_str(&env, "test1"));
-    let material2 = client.submit_material(&WasteType::Plastic, &3000, &submitter2, &soroban_sdk::String::from_str(&env, "test2"));
-    
+    let material1 = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter1,
+        &soroban_sdk::String::from_str(&env, "test1"),
+    );
+    let material2 = client.submit_material(
+        &WasteType::Plastic,
+        &3000,
+        &submitter2,
+        &soroban_sdk::String::from_str(&env, "test2"),
+    );
+
     client.verify_material(&material1.id, &recycler);
     client.verify_material(&material2.id, &recycler);
 
     let (_, _, total_tokens) = client.get_supply_chain_stats();
-    
+
     assert_eq!(total_tokens, 160); // 100 + 60
 }
 
@@ -481,14 +829,42 @@ fn test_distribution_with_custom_percentages() {
     client.initialize_admin(&admin);
     client.set_percentages(&admin, &25, &25);
 
-    client.register_participant(&recycler, &ParticipantRole::Recycler, &symbol_short!("Rec"), &100, &200);
-    client.register_participant(&submitter, &ParticipantRole::Recycler, &symbol_short!("Sub"), &300, &400);
-    client.register_participant(&collector, &ParticipantRole::Collector, &symbol_short!("Col"), &500, &600);
+    client.register_participant(
+        &recycler,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Rec"),
+        &100,
+        &200,
+    );
+    client.register_participant(
+        &submitter,
+        &ParticipantRole::Recycler,
+        &symbol_short!("Sub"),
+        &300,
+        &400,
+    );
+    client.register_participant(
+        &collector,
+        &ParticipantRole::Collector,
+        &symbol_short!("Col"),
+        &500,
+        &600,
+    );
 
-    let material = client.submit_material(&WasteType::Metal, &2000, &submitter, &soroban_sdk::String::from_str(&env, "test"));
-    
-    client.transfer_waste(&material.id, &submitter, &collector, &soroban_sdk::String::from_str(&env, "transfer"));
-    
+    let material = client.submit_material(
+        &WasteType::Metal,
+        &2000,
+        &submitter,
+        &soroban_sdk::String::from_str(&env, "test"),
+    );
+
+    client.transfer_waste(
+        &material.id,
+        &submitter,
+        &collector,
+        &soroban_sdk::String::from_str(&env, "transfer"),
+    );
+
     client.verify_material(&material.id, &recycler);
 
     let submitter_participant = client.get_participant(&submitter).unwrap();

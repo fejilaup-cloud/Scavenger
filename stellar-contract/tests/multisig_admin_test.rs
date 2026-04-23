@@ -1,7 +1,9 @@
-use soroban_sdk::{testutils::{Address as _, Ledger}, Address, Env, Symbol, Vec};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, Symbol, Vec,
+};
 use stellar_scavngr_contract::{
-    AdminAction, AdminProposal, ParticipantRole, ScavengerContract, ScavengerContractClient,
-    WasteType,
+    AdminAction, ParticipantRole, ScavengerContract, ScavengerContractClient, WasteType,
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -158,8 +160,7 @@ fn test_execute_transfer_admin() {
 #[test]
 fn test_execute_set_percentages() {
     let (_, client, a1, a2, _) = setup_multisig();
-    let proposal =
-        client.propose_admin_action(&a1, &AdminAction::SetPercentages(10, 40));
+    let proposal = client.propose_admin_action(&a1, &AdminAction::SetPercentages(10, 40));
     client.approve_admin_proposal(&a2, &proposal.id);
     client.execute_admin_proposal(&a1, &proposal.id);
     assert_eq!(client.get_collector_percentage(), Some(10));
@@ -183,8 +184,7 @@ fn test_execute_deactivate_waste() {
     );
     let waste_id = client.recycle_waste(&WasteType::Plastic, &1000u128, &recycler, &0i128, &0i128);
 
-    let proposal =
-        client.propose_admin_action(&a1, &AdminAction::DeactivateWaste(waste_id));
+    let proposal = client.propose_admin_action(&a1, &AdminAction::DeactivateWaste(waste_id));
     client.approve_admin_proposal(&a2, &proposal.id);
     client.execute_admin_proposal(&a1, &proposal.id);
 

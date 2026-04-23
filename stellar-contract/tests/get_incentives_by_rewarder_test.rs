@@ -136,7 +136,7 @@ fn test_get_incentives_by_rewarder_multiple_manufacturers() {
     let incentives1 = client.get_incentives_by_rewarder(&manufacturer1);
     assert_eq!(incentives1.len(), 2);
     assert!(incentives1.iter().all(|i| i.rewarder == manufacturer1));
-    
+
     let mut has_id1 = false;
     let mut has_id2 = false;
     for incentive in incentives1.iter() {
@@ -154,7 +154,7 @@ fn test_get_incentives_by_rewarder_multiple_manufacturers() {
     let incentives2 = client.get_incentives_by_rewarder(&manufacturer2);
     assert_eq!(incentives2.len(), 2);
     assert!(incentives2.iter().all(|i| i.rewarder == manufacturer2));
-    
+
     let mut has_id3 = false;
     let mut has_id4 = false;
     for incentive in incentives2.iter() {
@@ -443,7 +443,12 @@ fn test_get_incentives_by_rewarder_large_number() {
             3 => WasteType::Glass,
             _ => WasteType::PetPlastic,
         };
-        client.create_incentive(&manufacturer, &waste_type, &(100 + i * 10), &(10000 + i * 1000));
+        client.create_incentive(
+            &manufacturer,
+            &waste_type,
+            &(100 + i * 10),
+            &(10000 + i * 1000),
+        );
     }
 
     let incentives = client.get_incentives_by_rewarder(&manufacturer);

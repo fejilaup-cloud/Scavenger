@@ -258,6 +258,38 @@
                             },
                             {
                               "key": {
+                                "symbol": "grade_a_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_b_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_c_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "grade_d_count"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "metal_count"
                               },
                               "val": {
@@ -1719,7 +1751,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Only waste owner can transfer' from contract function 'Symbol(obj#367)'"
+                  "string": "caught panic 'Only waste owner can transfer' from contract function 'Symbol(obj#375)'"
                 },
                 {
                   "u64": 1
