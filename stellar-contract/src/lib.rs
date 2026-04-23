@@ -1151,12 +1151,8 @@ impl ScavengerContract {
             return 0;
         }
 
-        // Calculate reward: (weight in kg) * reward_points
-        let weight_kg = waste_amount / 1000;
-        let reward = weight_kg * incentive.reward_points;
-        
-        // Exact reward calculation instead of capping
-        reward
+        // Use tiered or flat reward calculation
+        incentive.calculate_reward(waste_amount)
     }
 
     /// Get all active incentives for a specific waste type, sorted by reward descending.
@@ -2951,6 +2947,7 @@ impl ScavengerContract {
             reward_points,
             total_budget,
             env.ledger().timestamp(),
+            &env,
         );
 
         // Store incentive
@@ -3067,94 +3064,86 @@ impl ScavengerContract {
         incentive
     }
 
-    // ========== Reputation Functions ==========
-
-    /// Apply a reputation delta to a participant, clamping to [REP_MIN, REP_MAX].
-    /// Also applies time-based decay for inactivity and updates `last_active_at`.
-    fn apply_reputation(env: &Env, address: &Address, delta: i128) {
-        let key = (address.clone(),);
-        let mut p: Participant = match env.storage().instance().get(&key) {
-            Some(p) => p,
-            None => return,
-        };
-
-        // Apply decay for inactivity before adding delta
-        let now = env.ledger().timestamp();
-        if now > p.last_active_at {
-            let elapsed = now - p.last_active_at;
-            let windows = (elapsed / DECAY_WINDOW_SECS) as i128;
-            if windows > 0 && p.reputation_score > 0 {
-                let decay = windows * DECAY_AMOUNT;
-                p.reputation_score = (p.reputation_score - decay).max(0);
-            }
-        }
-
-        let new_score = (p.reputation_score + delta).clamp(REP_MIN, REP_MAX);
-        let actual_delta = new_score - p.reputation_score;
-        p.reputation_score = new_score;
-        p.last_active_at = now;
-        env.storage().instance().set(&key, &p);
-
-        events::emit_reputation_changed(env, address, actual_delta, new_score);
-    }
-
-    /// Get the reputation badge for a participant.
+    /// Set tiered reward structure for an incentive (max 5 tiers).
+    ///
+    /// Tiers must be sorted by `min_weight_kg` ascending, non-overlapping,
+    /// and contiguous (each tier's `min_weight_kg` must equal the previous
+    /// tier's `max_weight_kg`). Only the original `rewarder` may call this.
+    ///
+    /// # Parameters
+    /// - `incentive_id`: ID of the incentive to update.
+    /// - `rewarder`: Original creator. Must sign.
+    /// - `tiers`: Vec of up to 5 [`IncentiveTier`] entries.
     ///
     /// # Returns
-    /// [`ReputationBadge`] derived from the participant's current score.
-    /// Returns `ReputationBadge::None` if the participant is not found.
-    pub fn get_reputation_badge(env: Env, address: Address) -> ReputationBadge {
-        let key = (address,);
-        if let Some(p) = env.storage().instance().get::<_, Participant>(&key) {
-            ReputationBadge::from_score(p.reputation_score)
-        } else {
-            ReputationBadge::None
-        }
-    }
-
-    /// Get all registered participant addresses whose reputation score >= `min_score`.
-    ///
-    /// # Returns
-    /// `Vec<Address>` of matching participants in index order.
-    pub fn get_participants_by_reputation(env: Env, min_score: i128) -> Vec<Address> {
-        let index: Vec<Address> = env
-            .storage()
-            .instance()
-            .get(&PART_INDEX)
-            .unwrap_or(Vec::new(&env));
-
-        let mut result = Vec::new(&env);
-        for addr in index.iter() {
-            let key = (addr.clone(),);
-            if let Some(p) = env.storage().instance().get::<_, Participant>(&key) {
-                if p.is_registered && p.reputation_score >= min_score {
-                    result.push_back(addr);
-                }
-            }
-        }
-        result
-    }
-
-    /// Manually apply a reputation penalty to a participant (admin only).
-    ///
-    /// Useful for dispute resolution. `delta` must be negative.
+    /// The updated [`Incentive`].
     ///
     /// # Errors
-    /// - Panics `"Delta must be negative for a penalty"`.
-    pub fn penalize_reputation(env: Env, admin: Address, participant: Address, delta: i128) {
-        Self::only_admin(&env, &admin);
-        if delta >= 0 {
-            panic!("Delta must be negative for a penalty");
-        }
-        Self::apply_reputation(&env, &participant, delta);
-    }
-
-    /// Trigger decay for a participant without changing their score by a delta.
-    /// Useful for off-chain cron-style calls to keep scores fresh.
-    pub fn decay_reputation(env: Env, participant: Address) {
+    /// - Panics `"Incentive not found"`.
+    /// - Panics `"Only incentive creator can set tiers"`.
+    /// - Panics `"Incentive is not active"`.
+    /// - Panics `"Maximum 5 tiers allowed"`.
+    /// - Panics `"Tiers cannot be empty"`.
+    /// - Panics `"Tier reward_points must be greater than zero"`.
+    /// - Panics `"Tiers must be sorted by min_weight_kg ascending"`.
+    /// - Panics `"Tier ranges must not overlap"`.
+    /// - Panics `"Last tier must be unbounded (max_weight_kg == 0)"`.
+    pub fn set_incentive_tiers(
+        env: Env,
+        incentive_id: u64,
+        rewarder: Address,
+        tiers: soroban_sdk::Vec<IncentiveTier>,
+    ) -> Incentive {
         Self::require_not_paused(&env);
-        // Apply zero delta — decay logic runs inside apply_reputation
-        Self::apply_reputation(&env, &participant, 0);
+        rewarder.require_auth();
+        Self::require_registered(&env, &rewarder);
+
+        let mut incentive =
+            Self::get_incentive_internal(&env, incentive_id).expect("Incentive not found");
+
+        if incentive.rewarder != rewarder {
+            panic!("Only incentive creator can set tiers");
+        }
+        if !incentive.active {
+            panic!("Incentive is not active");
+        }
+        if tiers.is_empty() {
+            panic!("Tiers cannot be empty");
+        }
+        if tiers.len() > 5 {
+            panic!("Maximum 5 tiers allowed");
+        }
+
+        // Validate each tier and ordering
+        let mut prev_max: u64 = 0;
+        for i in 0..tiers.len() {
+            let tier = tiers.get(i).unwrap();
+            if tier.reward_points == 0 {
+                panic!("Tier reward_points must be greater than zero");
+            }
+            if tier.min_weight_kg < prev_max {
+                panic!("Tier ranges must not overlap");
+            }
+            if tier.min_weight_kg != prev_max {
+                panic!("Tiers must be sorted by min_weight_kg ascending");
+            }
+            // Last tier must be unbounded
+            if i == tiers.len() - 1 && tier.max_weight_kg != 0 {
+                panic!("Last tier must be unbounded (max_weight_kg == 0)");
+            }
+            // Non-last tiers must have max > min
+            if i < tiers.len() - 1 {
+                if tier.max_weight_kg == 0 || tier.max_weight_kg <= tier.min_weight_kg {
+                    panic!("Tier ranges must not overlap");
+                }
+                prev_max = tier.max_weight_kg;
+            }
+        }
+
+        incentive.tiers = tiers;
+        Self::set_incentive(&env, incentive_id, &incentive);
+
+        incentive
     }
 
     // ========== Global Metrics ==========
@@ -3259,8 +3248,6 @@ impl ScavengerContract {
 
         let transfers = Self::get_transfer_history(env.clone(), waste_id);
         let cfg = Self::get_reward_config(&env);
-        let collector_pct: u32 = cfg.collector_percentage;
-        let owner_pct: u32 = cfg.owner_percentage;
         let collector_pct = cfg.collector_percentage;
         let owner_pct = cfg.owner_percentage;
 
