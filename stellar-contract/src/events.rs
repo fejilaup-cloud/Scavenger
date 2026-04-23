@@ -108,6 +108,20 @@ pub fn emit_admin_transferred(env: &Env, previous_admin: &Address) {
     env.events().publish((symbol_short!("adm_xfr"),), previous_admin);
 }
 
+pub fn emit_waste_expired(env: &Env, waste_id: u128) {
+    env.events().publish(
+        (symbol_short!("expired"), waste_id),
+        env.ledger().timestamp(),
+    );
+}
+
+pub fn emit_waste_deactivated(env: &Env, waste_id: u128, admin: &Address) {
+    env.events().publish(
+        (symbol_short!("deactive"), waste_id),
+        (admin, env.ledger().timestamp()),
+    );
+}
+
 pub fn emit_contract_paused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("paused"),), admin);
 }

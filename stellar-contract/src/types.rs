@@ -511,6 +511,8 @@ pub struct Waste {
     pub reserved_by: Option<Address>,
     /// Ledger timestamp at which the reservation expires (None if unreserved)
     pub reserved_until: Option<u64>,
+    /// Expiration timestamp (0 = no expiry). Set from per-type TTL at registration time.
+    pub expires_at: u64,
 }
 
 impl Waste {
@@ -526,6 +528,7 @@ impl Waste {
         is_active: bool,
         is_confirmed: bool,
         confirmer: Address,
+        expires_at: u64,
     ) -> Self {
         Self {
             waste_id,
@@ -540,7 +543,13 @@ impl Waste {
             confirmer,
             reserved_by: None,
             reserved_until: None,
+            expires_at,
         }
+    }
+
+    /// Returns true if the waste has expired at the given timestamp.
+    pub fn is_expired(&self, now: u64) -> bool {
+        self.expires_at != 0 && now >= self.expires_at
     }
 
     /// Validates that the waste has valid coordinates
@@ -646,6 +655,7 @@ pub struct WasteBuilder {
     is_active: bool,
     is_confirmed: bool,
     confirmer: Option<Address>,
+    expires_at: u64,
 }
 
 impl WasteBuilder {
@@ -667,6 +677,7 @@ impl WasteBuilder {
             is_active: true,
             is_confirmed: false,
             confirmer: Some(current_owner),
+            expires_at: 0,
         }
     }
 
@@ -718,6 +729,7 @@ impl WasteBuilder {
             confirmer,
             reserved_by: None,
             reserved_until: None,
+            expires_at: self.expires_at,
         }
     }
 }

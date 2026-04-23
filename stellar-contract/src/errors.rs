@@ -204,4 +204,7 @@ pub enum Error {
 
     /// (42) Waste is reserved by someone else; transfer is blocked.
     WasteReservedByOther = 42,
+    /// (32) The waste item has expired (TTL elapsed).
+    /// Returned by: `transfer_waste_v2`, `batch_transfer_waste`
+    WasteExpired = 32,
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Eye, ArrowRightLeft, CheckCircle, Loader2, Recycle } from 'lucide-react'
+import { Search, Eye, ArrowRightLeft, CheckCircle, Recycle } from 'lucide-react'
 import { useWasteList } from '@/hooks/useWasteList'
 import { Material, WasteType } from '@/api/types'
 import { Button } from '@/components/ui/Button'
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { WasteCardSkeleton } from '@/components/ui/Skeletons'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AddressDisplay } from '@/components/ui/AddressDisplay'
+import { TransactionConfirmDialog } from '@/components/ui/TransactionConfirmDialog'
 import {
   Select,
   SelectContent,
@@ -69,6 +70,10 @@ export function WasteListPage() {
   const [transferTarget, setTransferTarget] = useState<Material | null>(null)
   const [toAddress, setToAddress] = useState('')
   const [transferring, setTransferring] = useState(false)
+  // Confirm-waste dialog
+  const [confirmTarget, setConfirmTarget] = useState<Material | null>(null)
+  // Transfer confirm dialog
+  const [showTransferConfirm, setShowTransferConfirm] = useState(false)
 
   // Auto-open transfer dialog when navigated from collector dashboard (?transfer=<id>)
   useEffect(() => {
@@ -103,11 +108,18 @@ export function WasteListPage() {
     setTransferring(true)
     try {
       await transferWaste(transferTarget.id, toAddress.trim())
+      setShowTransferConfirm(false)
       setTransferTarget(null)
       setToAddress('')
     } finally {
       setTransferring(false)
     }
+  }
+
+  const handleConfirmWaste = () => {
+    if (!confirmTarget) return
+    confirmWaste(confirmTarget.id)
+    setConfirmTarget(null)
   }
 
   return (
@@ -253,7 +265,7 @@ export function WasteListPage() {
                               variant="ghost"
                               aria-label={`Confirm waste #${w.id}`}
                               title="Confirm"
-                              onClick={() => confirmWaste(w.id)}
+                              onClick={() => setConfirmTarget(w)}
                             >
                               <CheckCircle className="h-4 w-4" />
                             </Button>
@@ -370,13 +382,43 @@ export function WasteListPage() {
             <Button variant="outline" onClick={() => setTransferTarget(null)}>
               Cancel
             </Button>
-            <Button onClick={handleTransfer} disabled={transferring || !toAddress.trim()}>
-              {transferring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button
+              onClick={() => setShowTransferConfirm(true)}
+              disabled={transferring || !toAddress.trim()}
+            >
               Transfer
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Transfer — transaction confirm */}
+      <TransactionConfirmDialog
+        open={showTransferConfirm}
+        action="Transfer Waste"
+        params={transferTarget ? [
+          { label: 'Waste ID', value: `#${transferTarget.id}` },
+          { label: 'Type', value: WASTE_LABELS[transferTarget.waste_type] },
+          { label: 'Recipient', value: toAddress.trim() },
+        ] : []}
+        isPending={transferring}
+        onConfirm={handleTransfer}
+        onCancel={() => !transferring && setShowTransferConfirm(false)}
+      />
+
+      {/* Confirm Waste — transaction confirm */}
+      <TransactionConfirmDialog
+        open={!!confirmTarget}
+        action="Confirm Waste"
+        params={confirmTarget ? [
+          { label: 'Waste ID', value: `#${confirmTarget.id}` },
+          { label: 'Type', value: WASTE_LABELS[confirmTarget.waste_type] },
+          { label: 'Weight', value: `${confirmTarget.weight} kg` },
+        ] : []}
+        isPending={false}
+        onConfirm={handleConfirmWaste}
+        onCancel={() => setConfirmTarget(null)}
+      />
     </div>
   )
 }

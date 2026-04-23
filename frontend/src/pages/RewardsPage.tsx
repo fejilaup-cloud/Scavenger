@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Coins, Recycle, ArrowRightLeft, Heart, Package, Loader2 } from 'lucide-react'
+import { Coins, Recycle, ArrowRightLeft, Heart, Package } from 'lucide-react'
 import { useRewards } from '@/hooks/useRewards'
 import { useWallet } from '@/context/WalletContext'
 import { useDonateToCharity } from '@/hooks/useDonateToCharity'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { TransactionConfirmDialog } from '@/components/ui/TransactionConfirmDialog'
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import { useAppTitle } from '@/hooks/useAppTitle'
 
 function DonateButton({ balance }: { balance: bigint }) {
   const [open, setOpen] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [amount, setAmount] = useState('')
   const donate = useDonateToCharity()
 
@@ -31,12 +33,24 @@ function DonateButton({ balance }: { balance: bigint }) {
 
   const handleDonate = async () => {
     await donate.mutateAsync({ amount: parsed, balance })
+    setShowConfirm(false)
     setOpen(false)
     setAmount('')
   }
 
   return (
     <>
+      <TransactionConfirmDialog
+        open={showConfirm}
+        action="Donate to Charity"
+        params={[
+          { label: 'Amount', value: `${parsed.toLocaleString()} tokens` },
+          { label: 'Remaining balance', value: `${(balance - parsed).toLocaleString()} tokens` },
+        ]}
+        isPending={donate.isPending}
+        onConfirm={handleDonate}
+        onCancel={() => !donate.isPending && setShowConfirm(false)}
+      />
       <Button variant="outline" onClick={() => setOpen(true)} className="gap-2">
         <Heart className="h-4 w-4" />
         Donate to Charity
@@ -75,8 +89,7 @@ function DonateButton({ balance }: { balance: bigint }) {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleDonate} disabled={donate.isPending || !amount || isInvalid}>
-              {donate.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={() => setShowConfirm(true)} disabled={!amount || isInvalid}>
               Donate
             </Button>
           </DialogFooter>

@@ -1637,6 +1637,14 @@ impl ScavengerContract {
         let waste_id = Self::next_waste_id(&env) as u128;
         let timestamp = env.ledger().timestamp();
 
+        // Look up per-type TTL; 0 means no expiry
+        let ttl: u64 = env
+            .storage()
+            .instance()
+            .get(&("waste_ttl", waste_type))
+            .unwrap_or(0u64);
+        let expires_at = if ttl > 0 { timestamp + ttl } else { 0u64 };
+
         let waste = types::Waste::new(
             waste_id,
             waste_type,
@@ -1648,6 +1656,7 @@ impl ScavengerContract {
             true,
             false,
             recycler.clone(),
+            expires_at,
         );
 
         env.storage()
@@ -1744,6 +1753,10 @@ impl ScavengerContract {
 
         if !waste.is_active {
             return Err(Error::WasteDeactivated);
+        }
+
+        if waste.is_expired(env.ledger().timestamp()) {
+            return Err(Error::WasteExpired);
         }
 
         // Route check after registration checks, before any storage mutation
@@ -1852,7 +1865,9 @@ impl ScavengerContract {
                 return Err(Error::WasteDeactivated);
             }
 
-            // Get the current owner
+            if waste.is_expired(env.ledger().timestamp()) {
+                return Err(Error::WasteExpired);
+            }
             let from = waste.current_owner.clone();
 
             Self::require_addresses_different(&from, &to);
@@ -2016,6 +2031,7 @@ impl ScavengerContract {
             true,
             false,
             manufacturer.clone(),
+            0,
         );
 
         env.storage()
@@ -2198,15 +2214,92 @@ impl ScavengerContract {
             .instance()
             .set(&("waste_v2", waste_id), &waste);
 
-        env.events().publish(
-            (soroban_sdk::symbol_short!("deactive"), waste_id),
-            (admin, env.ledger().timestamp()),
-        );
+        events::emit_waste_deactivated(&env, waste_id, &admin);
 
         waste
     }
 
-    /// Submit multiple waste materials in a single transaction (v1 API).
+    /// Deactivate multiple v2 waste records in a single transaction (admin only).
+    ///
+    /// Skips IDs that do not exist or are already deactivated, and continues
+    /// processing the remaining items. Emits a `WasteDeactivated` event for
+    /// each successfully deactivated item.
+    ///
+    /// # Parameters
+    /// - `waste_ids`: Vec of v2 waste IDs to deactivate.
+    /// - `admin`: Contract admin. Must sign.
+    ///
+    /// # Returns
+    /// Count of items that were successfully deactivated (`u32`).
+    pub fn batch_deactivate_waste(env: Env, waste_ids: Vec<u128>, admin: Address) -> u32 {
+        Self::only_admin(&env, &admin);
+
+        let mut count: u32 = 0;
+        for waste_id in waste_ids.iter() {
+            let entry: Option<types::Waste> = env.storage().instance().get(&("waste_v2", waste_id));
+            if let Some(mut waste) = entry {
+                if waste.is_active {
+                    waste.deactivate();
+                    env.storage().instance().set(&("waste_v2", waste_id), &waste);
+                    events::emit_waste_deactivated(&env, waste_id, &admin);
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+
+    // ========== Waste TTL / Expiration Functions ==========
+
+    /// Set the TTL (seconds) for a waste type. 0 disables expiry for that type.
+    /// Admin only. Applied to newly registered waste; does not retroactively change existing items.
+    pub fn set_waste_ttl(env: Env, admin: Address, waste_type: WasteType, ttl_seconds: u64) {
+        Self::only_admin(&env, &admin);
+        env.storage().instance().set(&("waste_ttl", waste_type), &ttl_seconds);
+    }
+
+    /// Get the configured TTL for a waste type (0 = no expiry).
+    pub fn get_waste_ttl(env: Env, waste_type: WasteType) -> u64 {
+        env.storage().instance().get(&("waste_ttl", waste_type)).unwrap_or(0)
+    }
+
+    /// Return IDs of all v2 waste items that have expired at the current ledger time.
+    pub fn get_expired_wastes(env: Env) -> Vec<u128> {
+        let now = env.ledger().timestamp();
+        let total = Self::get_waste_count(&env);
+        let mut result = Vec::new(&env);
+        for id in 1..=total {
+            let waste_id = id as u128;
+            if let Some(waste) = env.storage().instance().get::<_, types::Waste>(&("waste_v2", waste_id)) {
+                if waste.is_active && waste.is_expired(now) {
+                    result.push_back(waste_id);
+                }
+            }
+        }
+        result
+    }
+
+    /// Deactivate all expired v2 waste items. Admin only.
+    /// Emits WasteExpired for each item cleaned up.
+    /// Returns the count of items deactivated.
+    pub fn cleanup_expired_wastes(env: Env, admin: Address) -> u32 {
+        Self::only_admin(&env, &admin);
+        let now = env.ledger().timestamp();
+        let total = Self::get_waste_count(&env);
+        let mut count: u32 = 0;
+        for id in 1..=total {
+            let waste_id = id as u128;
+            if let Some(mut waste) = env.storage().instance().get::<_, types::Waste>(&("waste_v2", waste_id)) {
+                if waste.is_active && waste.is_expired(now) {
+                    waste.deactivate();
+                    env.storage().instance().set(&("waste_v2", waste_id), &waste);
+                    events::emit_waste_expired(&env, waste_id);
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
     ///
     /// More gas-efficient than repeated [`submit_material`] calls because stats
     /// and storage writes are batched. Emits no individual events per item.
