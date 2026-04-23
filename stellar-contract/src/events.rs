@@ -108,6 +108,20 @@ pub fn emit_admin_transferred(env: &Env, previous_admin: &Address) {
     env.events().publish((symbol_short!("adm_xfr"),), previous_admin);
 }
 
+pub fn emit_waste_expired(env: &Env, waste_id: u128) {
+    env.events().publish(
+        (symbol_short!("expired"), waste_id),
+        env.ledger().timestamp(),
+    );
+}
+
+pub fn emit_waste_deactivated(env: &Env, waste_id: u128, admin: &Address) {
+    env.events().publish(
+        (symbol_short!("deactive"), waste_id),
+        (admin, env.ledger().timestamp()),
+    );
+}
+
 pub fn emit_contract_paused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("paused"),), admin);
 }
@@ -116,51 +130,58 @@ pub fn emit_contract_unpaused(env: &Env, admin: &Address) {
     env.events().publish((symbol_short!("unpaused"),), admin);
 }
 
-/// Emit event when a seasonal multiplier is set by admin.
-pub fn emit_seasonal_multiplier_set(env: &Env, multiplier: u32, start: u64, end: u64) {
+/// Emit event when an incentive schedule is set
+pub fn emit_incentive_scheduled(
+    env: &Env,
+    incentive_id: u64,
+    rewarder: &Address,
+    starts_at: Option<u64>,
+    ends_at: Option<u64>,
+) {
     env.events().publish(
-        (symbol_short!("seas_mul"),),
-        (multiplier, start, end),
+        (symbol_short!("inc_sched"), incentive_id),
+        (rewarder, starts_at, ends_at),
     );
 }
 
-/// Emit event when a waste item's processing status changes.
-pub fn emit_processing_status_changed(
-    env: &Env,
-    waste_id: u128,
-    new_status: u32,
-    updated_by: &Address,
-    timestamp: u64,
-) {
+/// Emit event when a waste item is reserved
+pub fn emit_waste_reserved(env: &Env, waste_id: u128, reserved_by: &Address, reserved_until: u64) {
     env.events().publish(
-        (symbol_short!("proc_chg"), waste_id),
-        (new_status, updated_by, timestamp),
+        (symbol_short!("wst_res"), waste_id),
+        (reserved_by, reserved_until),
     );
 }
 
-/// Emit event when carbon credits are earned on material verification.
-pub fn emit_carbon_credits_earned(
-    env: &Env,
-    participant: &Address,
-    waste_type: crate::types::WasteType,
-    weight_grams: u128,
-    credits: u128,
-) {
+/// Emit event when a reservation is cancelled
+pub fn emit_reservation_cancelled(env: &Env, waste_id: u128, cancelled_by: &Address) {
     env.events().publish(
-        (symbol_short!("cc_earn"), participant),
-        (waste_type, weight_grams, credits),
+        (symbol_short!("res_cncl"), waste_id),
+        cancelled_by,
     );
 }
 
-/// Emit event when a waste item is marked as contaminated.
-pub fn emit_waste_contaminated(
+/// Emit event when multiple waste items are merged into one
+pub fn emit_wastes_merged(
     env: &Env,
-    waste_id: u128,
-    verifier: &Address,
-    contamination_level: u32,
+    merged_id: u128,
+    owner: &Address,
+    source_ids: &soroban_sdk::Vec<u128>,
 ) {
     env.events().publish(
-        (symbol_short!("contam"), waste_id),
-        (verifier, contamination_level),
+        (symbol_short!("wst_mrgd"), merged_id),
+        (owner, source_ids),
+    );
+}
+
+/// Emit event when a waste item is split into multiple child items
+pub fn emit_waste_split(
+    env: &Env,
+    parent_id: u128,
+    owner: &Address,
+    child_ids: &soroban_sdk::Vec<u128>,
+) {
+    env.events().publish(
+        (symbol_short!("waste_spl"), parent_id),
+        (owner, child_ids),
     );
 }

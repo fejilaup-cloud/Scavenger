@@ -6,7 +6,7 @@ import { useAppTitle } from '@/hooks/useAppTitle'
 
 export function AnalyticsPage() {
   useAppTitle('Analytics')
-  const { stats, isLoading } = useStats()
+  const { totalWastes, isLoading } = useStats()
 
   const chartData = [
     { month: 'Jan', plastic: 45, metal: 30, glass: 25 },
@@ -30,7 +30,7 @@ export function AnalyticsPage() {
         <StatCard
           icon={<Package className="h-4 w-4" />}
           label="Total Waste Processed"
-          value={stats?.total_waste_count || 0}
+          value={Number(totalWastes)}
           trend="up"
           trendLabel="+12% from last month"
           isLoading={isLoading}
@@ -39,7 +39,7 @@ export function AnalyticsPage() {
         <StatCard
           icon={<Users className="h-4 w-4" />}
           label="Active Participants"
-          value={stats?.total_participants || 0}
+          value={0}
           trend="up"
           trendLabel="+5 new this week"
           isLoading={isLoading}
@@ -124,7 +124,7 @@ export function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {chartData.map((data, idx) => (
+              {chartData.map((data) => (
                 <div key={data.month} className="flex items-center gap-3">
                   <span className="w-12 text-sm text-muted-foreground">{data.month}</span>
                   <div className="flex flex-1 gap-1">
