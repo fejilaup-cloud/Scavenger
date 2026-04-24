@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import {
   ThemeProvider as NextThemesProvider,
   useTheme as useNextTheme,
@@ -27,6 +27,14 @@ function ThemeContextBridge({ children }: { children: ReactNode }) {
   const currentResolvedTheme: ResolvedTheme = resolvedTheme === 'dark' ? 'dark' : 'light'
   const isDark = currentResolvedTheme === 'dark'
 
+  // Add theme-ready class after mount so transitions don't fire on initial paint
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      document.documentElement.classList.add('theme-ready')
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme: currentTheme,
@@ -49,7 +57,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       defaultTheme="system"
       enableSystem
       storageKey="scavngr-theme"
-      disableTransitionOnChange
+      // transitions are handled via CSS + theme-ready class instead
       {...props}
     >
       <ThemeContextBridge>{children}</ThemeContextBridge>
