@@ -17,8 +17,10 @@ import {
   SelectValue,
 } from '@/components/ui/Select'
 import { TransactionConfirmDialog } from '@/components/ui/TransactionConfirmDialog'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { WasteType } from '@/api/types'
 import { useRecycleWaste } from '@/hooks/useRecycleWaste'
+import { useImageUpload } from '@/hooks/useImageUpload'
 import { Newspaper, Recycle, Package, Wrench, GlassWater, LocateFixed, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -57,7 +59,7 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
   } | null>(null)
 
   const { mutate: recycleWaste, isPending } = useRecycleWaste()
-
+  const { images, addImages, removeImage, cids, isUploading, validationError } = useImageUpload()
   function reset() {
     setWeight('')
     setLatitude('')
@@ -142,6 +144,9 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
             <div className="rounded-md border bg-muted/40 px-6 py-3">
               <p className="text-xs text-muted-foreground">Waste ID</p>
               <p className="font-mono text-xl font-bold">#{successId.toString()}</p>
+              {cids.length > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">{cids.length} image{cids.length !== 1 ? 's' : ''} attached</p>
+              )}
             </div>
             <Button className="w-full" onClick={handleClose}>Done</Button>
           </div>
@@ -164,6 +169,7 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
           { label: 'Weight', value: weightDisplay },
           ...(latitude ? [{ label: 'Latitude', value: latitude }] : []),
           ...(longitude ? [{ label: 'Longitude', value: longitude }] : []),
+          ...(cids.length > 0 ? [{ label: 'Images', value: `${cids.length} uploaded` }] : []),
         ]}
         isPending={isPending}
         onConfirm={executeRegister}
@@ -281,12 +287,24 @@ export function RegisterWasteModal({ open, address, onClose, onSuccess }: Props)
             )}
           </div>
 
+          {/* Image upload */}
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Photos <span className="text-muted-foreground font-normal">(optional)</span></label>
+            <ImageUpload
+              images={images}
+              onAdd={addImages}
+              onRemove={removeImage}
+              validationError={validationError}
+              disabled={isPending}
+            />
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !weight}>
-              {isPending ? 'Submitting…' : 'Register'}
+            <Button type="submit" disabled={isPending || isUploading || !weight}>
+              {isUploading ? 'Uploading images…' : isPending ? 'Submitting…' : 'Register'}
             </Button>
           </DialogFooter>
         </form>

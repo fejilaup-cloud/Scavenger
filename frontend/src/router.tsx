@@ -43,11 +43,8 @@ const CommunityPage = lazy(() =>
 const AnalyticsPage = lazy(() =>
   import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage }))
 )
-const ProfilePage = lazy(() =>
-  import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage }))
-)
-const SearchResultsPage = lazy(() =>
-  import('@/pages/SearchResultsPage').then((m) => ({ default: m.SearchResultsPage }))
+const WasteMapPage = lazy(() =>
+  import('@/pages/WasteMapPage').then((m) => ({ default: m.WasteMapPage }))
 )
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -92,8 +89,7 @@ export const router = createBrowserRouter([
       { path: 'tracker', element: <SupplyChainTrackerPage /> },
       { path: 'community', element: <CommunityPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
-      { path: 'profile', element: <ProfilePage /> },
-      { path: 'search', element: <SearchResultsPage /> }
+      { path: 'map', element: <WasteMapPage /> }
     ]
   },
   { path: '*', element: <NotFoundPage /> }

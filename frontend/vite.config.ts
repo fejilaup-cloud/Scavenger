@@ -12,5 +12,11 @@ export default defineConfig({
       '@hooks': path.resolve(__dirname, './src/hooks'),
       '@lib': path.resolve(__dirname, './src/lib')
     }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.tsx'],
+    css: false,
   }
 })

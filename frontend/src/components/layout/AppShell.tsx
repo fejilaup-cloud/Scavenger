@@ -12,7 +12,7 @@ import {
   Wallet,
   LogOut,
   Recycle,
-  User
+  Map
 } from 'lucide-react'
 import { useWallet } from '@/context/WalletContext'
 import { useAuth } from '@/context/AuthContext'
@@ -52,10 +52,10 @@ const NAV_LINKS = [
     icon: History
   },
   {
-    label: 'Profile',
-    href: '/profile',
+    label: 'Waste Map',
+    href: '/map',
     roles: ['Recycler', 'Collector', 'Manufacturer'],
-    icon: User
+    icon: Map
   }
 ]
 
