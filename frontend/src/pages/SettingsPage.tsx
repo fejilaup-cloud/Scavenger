@@ -8,6 +8,7 @@ import { NETWORK_CONFIGS } from '@/lib/stellar'
 import { Button } from '@/components/ui/Button'
 import { Switch } from '@/components/ui/Switch'
 import { cn } from '@/lib/utils'
+import { NotificationStore, type NotificationPreferences, type NotificationType } from '@/lib/notifications'
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
 
@@ -56,6 +57,9 @@ export function SettingsPage() {
   const { theme, isDark, isReady, setTheme } = useTheme()
 
   const [copied, setCopied] = useState(false)
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(() =>
+    NotificationStore.loadPrefs()
+  )
 
   function copyAddress() {
     if (!address) return
@@ -73,6 +77,12 @@ export function SettingsPage() {
   function handleNetworkChange(network: Network) {
     const netCfg = NETWORK_CONFIGS[network]
     updateConfig({ network, rpcUrl: netCfg.rpcUrl })
+  }
+
+  function handleNotifToggle(type: NotificationType, checked: boolean) {
+    const updated = { ...notifPrefs, [type]: checked }
+    setNotifPrefs(updated)
+    NotificationStore.savePrefs(updated)
   }
 
   return (
@@ -175,6 +185,50 @@ export function SettingsPage() {
             RPC: <span className="font-mono">{config.rpcUrl}</span>
           </p>
         </div>
+      </Section>
+
+      {/* Notifications */}
+      <Section title="Notifications">
+        <Row
+          label="Transfer notifications"
+          description="Notify when waste is transferred to or from you"
+        >
+          <Switch
+            checked={notifPrefs.transfer}
+            onCheckedChange={(checked) => handleNotifToggle('transfer', checked)}
+            aria-label="Toggle transfer notifications"
+          />
+        </Row>
+        <Row
+          label="Confirmation notifications"
+          description="Notify when waste is confirmed"
+        >
+          <Switch
+            checked={notifPrefs.confirmation}
+            onCheckedChange={(checked) => handleNotifToggle('confirmation', checked)}
+            aria-label="Toggle confirmation notifications"
+          />
+        </Row>
+        <Row
+          label="Reward notifications"
+          description="Notify when you earn tokens"
+        >
+          <Switch
+            checked={notifPrefs.reward}
+            onCheckedChange={(checked) => handleNotifToggle('reward', checked)}
+            aria-label="Toggle reward notifications"
+          />
+        </Row>
+        <Row
+          label="System notifications"
+          description="Notify about platform announcements"
+        >
+          <Switch
+            checked={notifPrefs.system}
+            onCheckedChange={(checked) => handleNotifToggle('system', checked)}
+            aria-label="Toggle system notifications"
+          />
+        </Row>
       </Section>
     </div>
   )

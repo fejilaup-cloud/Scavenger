@@ -11,12 +11,15 @@ import {
   History,
   Wallet,
   LogOut,
-  Recycle
+  Recycle,
+  User
 } from 'lucide-react'
 import { useWallet } from '@/context/WalletContext'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { SearchBar } from '@/components/ui/SearchBar'
+import { NotificationBell } from '@/components/ui/NotificationBell'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
@@ -47,6 +50,12 @@ const NAV_LINKS = [
     href: '/history',
     roles: ['Recycler', 'Collector', 'Manufacturer'],
     icon: History
+  },
+  {
+    label: 'Profile',
+    href: '/profile',
+    roles: ['Recycler', 'Collector', 'Manufacturer'],
+    icon: User
   }
 ]
 
@@ -105,7 +114,12 @@ export function AppShell({ children }: PropsWithChildren) {
         <header className="flex h-14 items-center justify-between border-b px-4">
           <span className="text-sm font-medium md:hidden">Scavngr</span>
 
+          <div className="mx-4 hidden flex-1 md:flex">
+            <SearchBar />
+          </div>
+
           <div className="ml-auto flex items-center gap-3">
+            <NotificationBell />
             <ThemeToggle className="shrink-0" />
 
             {isConnected && address ? (
@@ -133,7 +147,7 @@ export function AppShell({ children }: PropsWithChildren) {
       {/* Mobile bottom navigation */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
         <div className="flex min-h-16 items-center justify-around gap-1 px-2 py-1">
-          {links.slice(0, 5).map((link) => {
+          {links.filter((l) => l.href !== '/profile').slice(0, 4).map((link) => {
             const Icon = link.icon
             return (
               <NavLink
@@ -151,6 +165,18 @@ export function AppShell({ children }: PropsWithChildren) {
               </NavLink>
             )
           })}
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              cn(
+                'flex min-h-12 min-w-[3.5rem] flex-1 flex-col items-center justify-center rounded-md px-2 py-1 text-[10px] font-medium transition-colors',
+                isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+              )
+            }
+          >
+            <User className="mb-0.5 h-5 w-5" />
+            <span className="truncate">Profile</span>
+          </NavLink>
         </div>
       </nav>
     </div>
