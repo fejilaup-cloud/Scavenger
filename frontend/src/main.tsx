@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider, MutationCache, QueryCache } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { persistQueryClient } from '@tanstack/react-query-persist-client'
 import { Toaster, toast } from 'sonner'
 import { App } from '@/App'
 import { AuthProvider } from '@/context/AuthContext'
@@ -11,6 +12,7 @@ import { ThemeProvider, useTheme } from '@/context/ThemeProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { getErrorMessage } from '@/lib/contractErrors'
 import { initWebVitals } from '@/lib/webVitals'
+import { getDB, setQueryData, getQueryData, removeQueryData } from '@/lib/indexedDB'
 import './index.css'
 
 // Initialize Web Vitals monitoring
@@ -47,9 +49,50 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      staleTime: 5 * 60 * 1000 // 5 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 24 * 60 * 60 * 1000, // 24 hours
     }
   }
+})
+
+// Set up persistence
+persistQueryClient({
+  queryClient,
+  persister: {
+    persistClient: async (client) => {
+      const db = await getDB()
+      const queries = client.getQueryCache().getAll()
+      
+      for (const query of queries) {
+        if (query.state.status === 'success' && query.state.data) {
+          await setQueryData(
+            JSON.stringify(query.queryKey),
+            query.state.data,
+            query.queryKey as string[]
+          )
+        }
+      }
+    },
+    restoreClient: async () => {
+      const db = await getDB()
+      const tx = db.transaction('queries', 'readonly')
+      const store = tx.objectStore('queries')
+      
+      const queries: Record<string, any> = {}
+      
+      for await (const cursor of store) {
+        queries[cursor.key] = cursor.value
+      }
+      
+      await tx.done
+      return queries
+    },
+    removeClient: async () => {
+      const db = await getDB()
+      await db.clear('queries')
+    },
+  },
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
 })
 
 function ThemedToaster() {

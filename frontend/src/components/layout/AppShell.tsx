@@ -22,8 +22,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { SearchBar } from '@/components/ui/SearchBar'
-import { NotificationBell } from '@/components/ui/NotificationBell'
-import { cn } from '@/lib/utils'
+import { OfflineIndicator } from '@/components/OfflineIndicator'
 
 const NAV_LINKS = [
   {
@@ -155,7 +154,7 @@ export function AppShell({ children }: PropsWithChildren) {
           </div>
         </header>
 
-        {/* Page content */}
+        <OfflineIndicator />
         <main className={cn('flex-1 overflow-x-hidden p-4 pb-20 sm:p-6 sm:pb-6')}>{children}</main>
       </div>
 

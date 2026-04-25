@@ -1,9 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { ScavengerClient } from '@/api/client'
 import { useWallet } from '@/context/WalletContext'
 import { useContract } from '@/context/ContractContext'
 import { networkConfig } from '@/lib/stellar'
 import { StrKey } from '@stellar/stellar-sdk'
+import { useOfflineMutation } from '@/hooks/useOfflineMutation'
 
 export interface TransferWasteParams {
   wasteId: bigint
@@ -15,7 +16,7 @@ export function useTransferWaste() {
   const { config } = useContract()
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useOfflineMutation({
     mutationFn: async ({ wasteId, to }: TransferWasteParams) => {
       if (!address) throw new Error('Wallet not connected.')
       if (!StrKey.isValidEd25519PublicKey(to)) throw new Error('Invalid recipient address.')
@@ -34,5 +35,6 @@ export function useTransferWaste() {
       queryClient.invalidateQueries({ queryKey: ['participant-wastes'] })
       queryClient.invalidateQueries({ queryKey: ['transfer-history', wasteId.toString()] })
     },
+    mutationKey: ['transfer-waste'],
   })
 }
