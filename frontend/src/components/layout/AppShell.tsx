@@ -16,6 +16,9 @@ import {
   ShieldAlert,
   ShieldCheck,
   User,
+  ShoppingBag,
+  Award,
+  BookOpen,
 } from 'lucide-react'
 import { useWallet } from '@/context/WalletContext'
 import { useAuth } from '@/context/AuthContext'
@@ -71,6 +74,24 @@ const NAV_LINKS = [
     href: '/admin',
     roles: ['Admin'],
     icon: ShieldAlert
+  },
+  {
+    label: 'Marketplace',
+    href: '/marketplace',
+    roles: ['Recycler', 'Collector', 'Manufacturer'],
+    icon: ShoppingBag
+  },
+  {
+    label: 'Certifications',
+    href: '/certifications',
+    roles: ['Recycler', 'Collector', 'Manufacturer'],
+    icon: Award
+  },
+  {
+    label: 'Recycling Guide',
+    href: '/recycling-guide',
+    roles: ['Recycler', 'Collector', 'Manufacturer'],
+    icon: BookOpen
   }
 ]
 
@@ -91,6 +112,9 @@ function getOnboardingDataAttribute(href: string): string | undefined {
     '/verify': 'verify',
     '/analytics': 'analytics',
     '/admin': 'admin-dashboard',
+    '/marketplace': 'marketplace',
+    '/certifications': 'certifications',
+    '/recycling-guide': 'recycling-guide',
   }
   return attributeMap[href]
 }

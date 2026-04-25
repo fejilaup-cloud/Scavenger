@@ -64,6 +64,15 @@ const WasteComparisonPage = lazy(() =>
 const PredictiveAnalyticsPage = lazy(() =>
   import('@/pages/PredictiveAnalyticsPage').then((m) => ({ default: m.PredictiveAnalyticsPage }))
 )
+const WasteMarketplacePage = lazy(() =>
+  import('@/pages/WasteMarketplacePage').then((m) => ({ default: m.WasteMarketplacePage }))
+)
+const WasteCertificationPage = lazy(() =>
+  import('@/pages/WasteCertificationPage').then((m) => ({ default: m.WasteCertificationPage }))
+)
+const RecyclingGuidePage = lazy(() =>
+  import('@/pages/RecyclingGuidePage').then((m) => ({ default: m.RecyclingGuidePage }))
+)
 
 // eslint-disable-next-line react-refresh/only-export-components
 function PageFallback() {
@@ -113,7 +122,10 @@ export const router = createBrowserRouter([
       { path: 'route-planner', element: <RoutePlannerPage /> },
       { path: 'messages', element: <MessagingPage /> },
       { path: 'compare', element: <WasteComparisonPage /> },
-      { path: 'predictions', element: <PredictiveAnalyticsPage /> }
+      { path: 'predictions', element: <PredictiveAnalyticsPage /> },
+      { path: 'marketplace', element: <WasteMarketplacePage /> },
+      { path: 'certifications', element: <WasteCertificationPage /> },
+      { path: 'recycling-guide', element: <RecyclingGuidePage /> }
     ]
   },
   { path: '*', element: <NotFoundPage /> }
