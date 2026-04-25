@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { SearchBar } from '@/components/ui/SearchBar'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
+import { OnboardingTutorial, useOnboardingTutorial } from '@/components/OnboardingTutorial'
 
 const NAV_LINKS = [
   {
@@ -77,15 +78,33 @@ function truncate(addr: string) {
   return `${addr.slice(0, 4)}...${addr.slice(-4)}`
 }
 
+function getOnboardingDataAttribute(href: string): string | undefined {
+  const attributeMap: Record<string, string> = {
+    '/dashboard': 'dashboard',
+    '/submit': 'submit-waste',
+    '/collect': 'collect',
+    '/manufacturer': 'manufacturer-dashboard',
+    '/incentives': 'incentives',
+    '/transfer': 'transfer',
+    '/wastes': 'my-wastes',
+    '/map': 'waste-map',
+    '/verify': 'verify',
+    '/analytics': 'analytics',
+    '/admin': 'admin-dashboard',
+  }
+  return attributeMap[href]
+}
+
 export function AppShell({ children }: PropsWithChildren) {
   const { address, isConnected, connect, disconnect, isLoading } = useWallet()
   const { user, logout } = useAuth()
+  const { isVisible, hideTutorial } = useOnboardingTutorial(user?.role as any)
 
   const role = user?.role ?? ''
   const links = NAV_LINKS.filter((l) => !role || l.roles.includes(role))
 
   const Sidebar = (
-    <nav className="flex flex-col gap-1 p-4">
+    <nav className="flex flex-col gap-1 p-4" data-onboarding="sidebar">
       <div className="mb-4 flex items-center gap-2 px-2">
         <Recycle className="h-6 w-6 text-primary" />
         <span className="text-lg font-bold">Scavngr</span>
@@ -94,6 +113,7 @@ export function AppShell({ children }: PropsWithChildren) {
         <NavLink
           key={link.href}
           to={link.href}
+          data-onboarding={getOnboardingDataAttribute(link.href)}
           className={({ isActive }) =>
             cn(
               'flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
@@ -128,7 +148,7 @@ export function AppShell({ children }: PropsWithChildren) {
         <header className="flex h-14 items-center justify-between border-b px-4">
           <span className="text-sm font-medium md:hidden">Scavngr</span>
 
-          <div className="mx-4 hidden flex-1 md:flex">
+          <div className="mx-4 hidden flex-1 md:flex" data-onboarding="search">
             <SearchBar />
           </div>
 
@@ -193,6 +213,13 @@ export function AppShell({ children }: PropsWithChildren) {
           </NavLink>
         </div>
       </nav>
+
+      {/* Onboarding Tutorial */}
+      <OnboardingTutorial
+        userRole={user?.role as any}
+        isVisible={isVisible}
+        onComplete={hideTutorial}
+      />
     </div>
   )
 }

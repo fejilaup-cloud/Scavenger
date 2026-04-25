@@ -8,7 +8,7 @@ import { NETWORK_CONFIGS } from '@/lib/stellar'
 import { Button } from '@/components/ui/Button'
 import { Switch } from '@/components/ui/Switch'
 import { cn } from '@/lib/utils'
-import { NotificationStore, type NotificationPreferences, type NotificationType } from '@/lib/notifications'
+import { useOnboarding } from '@/hooks/useOnboarding'
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
 
@@ -78,6 +78,8 @@ export function SettingsPage() {
     const netCfg = NETWORK_CONFIGS[network]
     updateConfig({ network, rpcUrl: netCfg.rpcUrl })
   }
+
+  const { resetOnboarding } = useOnboarding()
 
   function handleNotifToggle(type: NotificationType, checked: boolean) {
     const updated = { ...notifPrefs, [type]: checked }
@@ -228,6 +230,26 @@ export function SettingsPage() {
             onCheckedChange={(checked) => handleNotifToggle('system', checked)}
             aria-label="Toggle system notifications"
           />
+        </Row>
+      </Section>
+
+      {/* Onboarding */}
+      <Section title="Onboarding">
+        <Row
+          label="Restart tutorial"
+          description="Start the interactive onboarding tutorial again"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              resetOnboarding()
+              // Show a toast or notification that tutorial will restart on next login
+              alert('Tutorial will restart on your next login!')
+            }}
+          >
+            Restart Tutorial
+          </Button>
         </Row>
       </Section>
     </div>
